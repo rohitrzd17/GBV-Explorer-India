@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GBV Explorer India — Incident Map & News Monitor</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Leaflet MarkerCluster CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+    <!-- Font Awesome for clean icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+        <div class="header-brand">
+            <div class="brand-icon"><i class="fa-solid fa-map-location-dot"></i></div>
+            <div>
+                <h1>GBV Explorer <span>India</span></h1>
+                <p class="tagline">Spatial Monitoring & Verification of Reported Gender-Based Violence Incidents</p>
+            </div>
+        </div>
+
+        <!-- Key Metrics Cards (Responsive) -->
+        <div class="metrics-strip">
+            <div class="metric-card">
+                <span class="metric-label">Total Reports</span>
+                <span class="metric-value" id="stat-total">-</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">Geocoded</span>
+                <span class="metric-value highlight" id="stat-geocoded">-</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">Top Category</span>
+                <span class="metric-value" id="stat-top-cat">-</span>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button id="export-csv-btn" class="btn btn-success" title="Download incidents report as CSV">
+                <i class="fa-solid fa-file-arrow-down"></i> Export CSV
+            </button>
+            <button id="admin-btn" class="btn btn-warning" title="Open Database & Feeds Manager (Protected)">
+                <i class="fa-solid fa-lock"></i> Database Admin
+            </button>
+            <button id="refresh-btn" class="btn btn-primary" title="Trigger pipeline to pull latest RSS feeds">
+                <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i> Refresh Feeds
+            </button>
+            <button id="toggle-list-btn" class="btn btn-secondary" title="Toggle Incident List Drawer">
+                <i class="fa-solid fa-list"></i> Incidents
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <div class="main-container">
+        <!-- Floating Filter Bar -->
+        <div class="filter-bar">
+            <div class="filter-group search-group">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="filter-search" placeholder="Search keywords, town, district...">
+            </div>
+
+            <div class="filter-group">
+                <label for="filter-category"><i class="fa-solid fa-tags"></i> Category</label>
+                <select id="filter-category">
+                    <option value="All">All Categories</option>
+                    <option value="Sexual Assault">Sexual Assault / Rape</option>
+                    <option value="POCSO / Minor">POCSO / Minor</option>
+                    <option value="Domestic Violence">Domestic Violence</option>
+                    <option value="Dowry Violence">Dowry Violence</option>
+                    <option value="Harassment & Stalking">Harassment & Stalking</option>
+                    <option value="Acid Attack">Acid Attack</option>
+                    <option value="Other GBV">Other GBV Offenses</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filter-state"><i class="fa-solid fa-location-dot"></i> State</label>
+                <select id="filter-state">
+                    <option value="All">All States / UTs</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filter-date"><i class="fa-solid fa-calendar"></i> Timeframe</label>
+                <select id="filter-date">
+                    <option value="all">All Available</option>
+                    <option value="7d">Last 7 Days</option>
+                    <option value="30d" selected>Last 30 Days</option>
+                </select>
+            </div>
+
+            <div class="filter-group reset-btn-group">
+                <button id="reset-filters-btn" class="btn btn-ghost" title="Reset All Filters">
+                    <i class="fa-solid fa-xmark"></i> Clear
+                </button>
+            </div>
+        </div>
+
+        <!-- Map View -->
+        <div id="map-container">
+            <div id="map"></div>
+            <!-- Map Legend -->
+            <div class="map-legend">
+                <h4><i class="fa-solid fa-circle-info"></i> Incident Categories</h4>
+                <div class="legend-item"><span class="legend-dot dot-assault"></span> Sexual Assault</div>
+                <div class="legend-item"><span class="legend-dot dot-pocso"></span> POCSO / Minor</div>
+                <div class="legend-item"><span class="legend-dot dot-domestic"></span> Domestic Violence</div>
+                <div class="legend-item"><span class="legend-dot dot-dowry"></span> Dowry Violence</div>
+                <div class="legend-item"><span class="legend-dot dot-harassment"></span> Harassment / Stalking</div>
+                <div class="legend-item"><span class="legend-dot dot-acid"></span> Acid Attack</div>
+            </div>
+        </div>
+
+        <!-- Side Drawer: Incident List -->
+        <aside id="side-drawer" class="side-drawer">
+            <div class="drawer-header">
+                <h3>Reported Incidents (<span id="drawer-count">0</span>)</h3>
+                <button id="close-drawer-btn" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="incident-list" class="incident-list">
+                <!-- Incident cards dynamically injected here -->
+            </div>
+        </aside>
+    </div>
+
+    <!-- Modal for Detailed Incident View & News Sources -->
+    <div id="incident-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <span id="modal-category-badge" class="badge">Category</span>
+                    <h2 id="modal-title">Incident Title</h2>
+                </div>
+                <button id="close-modal-btn" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-meta-grid">
+                    <div><strong><i class="fa-solid fa-calendar"></i> Date:</strong> <span id="modal-date">-</span></div>
+                    <div><strong><i class="fa-solid fa-location-dot"></i> Location:</strong> <span id="modal-location">-</span></div>
+                    <div><strong><i class="fa-solid fa-scale-balanced"></i> Status:</strong> <span id="modal-status">-</span></div>
+                </div>
+                <hr>
+                <h4>Summary</h4>
+                <p id="modal-summary" class="modal-summary-text"></p>
+                <hr>
+                <h4>Verified Media Sources & Coverage</h4>
+                <div id="modal-sources-list" class="sources-list">
+                    <!-- Source items dynamically injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Auth Modal for Database Admin -->
+    <div id="admin-auth-modal" class="modal">
+        <div class="modal-content auth-modal-content">
+            <div class="modal-header">
+                <div class="admin-title-wrap">
+                    <i class="fa-solid fa-lock" style="color: #f59e0b; font-size: 1.2rem;"></i>
+                    <h3>Database Admin Access</h3>
+                </div>
+                <button id="close-auth-btn" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="admin-auth-form">
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
+                        Enter the administrator passphrase to manage database records, categories, and custom feeds.
+                    </p>
+                    <div class="form-group">
+                        <label for="admin-password-input">Password</label>
+                        <input type="password" id="admin-password-input" required placeholder="••••••••" autocomplete="current-password">
+                    </div>
+                    <div id="auth-error-msg" class="auth-error" style="display:none; color: #ef4444; font-size: 0.8rem; margin-top: 8px;">
+                        <i class="fa-solid fa-circle-exclamation"></i> Incorrect password. Access denied.
+                    </div>
+                    <div class="modal-actions" style="margin-top: 16px;">
+                        <button type="button" id="cancel-auth-btn" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-warning"><i class="fa-solid fa-key"></i> Unlock</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Management Backend / Admin Modal -->
+    <div id="admin-modal" class="modal">
+        <div class="modal-content admin-modal-content">
+            <div class="modal-header">
+                <div class="admin-title-wrap">
+                    <i class="fa-solid fa-database admin-icon"></i>
+                    <div>
+                        <h2>Database Management & Feeds</h2>
+                        <p class="tagline">Edit incident details, manage raw sources, add custom RSS feeds, and purge records</p>
+                    </div>
+                </div>
+                <button id="close-admin-btn" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Admin Navigation Tabs -->
+            <div class="admin-tabs">
+                <button class="admin-tab-btn active" data-tab="tab-incidents"><i class="fa-solid fa-list-check"></i> Incidents (<span id="admin-inc-count">0</span>)</button>
+                <button class="admin-tab-btn" data-tab="tab-add-incident"><i class="fa-solid fa-circle-plus"></i> Add Incident</button>
+                <button class="admin-tab-btn" data-tab="tab-feeds"><i class="fa-solid fa-rss"></i> RSS Feeds</button>
+                <button class="admin-tab-btn" data-tab="tab-sources"><i class="fa-solid fa-newspaper"></i> Raw Sources</button>
+                <button id="admin-purge-btn" class="btn btn-danger-sm" title="Remove non-India reports from database"><i class="fa-solid fa-trash-can"></i> Purge Non-India</button>
+            </div>
+
+            <div class="modal-body admin-modal-body">
+                <!-- Tab 1: Incidents Manager -->
+                <div id="tab-incidents" class="admin-tab-pane active">
+                    <div class="admin-toolbar">
+                        <input type="text" id="admin-inc-search" placeholder="Filter incidents by title, city, district..." class="admin-search-input">
+                        <button id="admin-inc-search-btn" class="btn btn-secondary"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+                    </div>
+                    <div class="admin-table-wrapper">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Category</th>
+                                    <th>Location</th>
+                                    <th>Date</th>
+                                    <th>Coords</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-inc-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Add Incident Form -->
+                <div id="tab-add-incident" class="admin-tab-pane">
+                    <form id="add-incident-form" class="admin-form">
+                        <div class="form-row">
+                            <div class="form-group flex-2">
+                                <label>Incident Title *</label>
+                                <input type="text" id="add-title" required placeholder="Concise title (anonymize victim)">
+                            </div>
+                            <div class="form-group flex-1">
+                                <label>Category *</label>
+                                <select id="add-category">
+                                    <option value="Sexual Assault">Sexual Assault</option>
+                                    <option value="POCSO / Minor">POCSO / Minor</option>
+                                    <option value="Domestic Violence">Domestic Violence</option>
+                                    <option value="Dowry Violence">Dowry Violence</option>
+                                    <option value="Harassment & Stalking">Harassment & Stalking</option>
+                                    <option value="Acid Attack">Acid Attack</option>
+                                    <option value="Other GBV">Other GBV</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Incident Date (YYYY-MM-DD)</label>
+                                <input type="date" id="add-date">
+                            </div>
+                            <div class="form-group">
+                                <label>City / Town / Area</label>
+                                <input type="text" id="add-location" placeholder="e.g. Hathras, Rohini, Pune">
+                            </div>
+                            <div class="form-group">
+                                <label>State</label>
+                                <select id="add-state">
+                                    <option value="">Select State (Optional)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Latitude (Optional, auto-resolved)</label>
+                                <input type="number" step="any" id="add-lat" placeholder="e.g. 28.6139">
+                            </div>
+                            <div class="form-group">
+                                <label>Longitude (Optional, auto-resolved)</label>
+                                <input type="number" step="any" id="add-lon" placeholder="e.g. 77.2090">
+                            </div>
+                            <div class="form-group">
+                                <label>Legal Status</label>
+                                <select id="add-status">
+                                    <option value="FIR Registered">FIR Registered</option>
+                                    <option value="Arrest Made">Arrest Made</option>
+                                    <option value="Under Investigation">Under Investigation</option>
+                                    <option value="Accused Absconding">Accused Absconding</option>
+                                    <option value="Convicted">Convicted</option>
+                                    <option value="Bail / Acquittal">Bail / Acquittal</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Incident Summary</label>
+                            <textarea id="add-summary" rows="3" placeholder="Factual details regarding the incident..."></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group flex-2">
+                                <label>Source News URL (Optional)</label>
+                                <input type="url" id="add-source-url" placeholder="https://news-outlet.com/article">
+                            </div>
+                            <div class="form-group flex-1">
+                                <label>Publisher</label>
+                                <input type="text" id="add-publisher" placeholder="e.g. Times of India, PTI">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Save Incident</button>
+                    </form>
+                </div>
+
+                <!-- Tab 3: Feeds & RSS Queries -->
+                <div id="tab-feeds" class="admin-tab-pane">
+                    <div class="admin-split-view">
+                        <div class="feed-form-box">
+                            <h4><i class="fa-solid fa-plus-circle"></i> Add Custom Feed</h4>
+                            <form id="add-feed-form">
+                                <div class="form-group">
+                                    <label>Feed / Region Name *</label>
+                                    <input type="text" id="feed-name" required placeholder="e.g. Rajasthan GBV News">
+                                </div>
+                                <div class="form-group">
+                                    <label>Search Query *</label>
+                                    <input type="text" id="feed-query" required placeholder="e.g. (rape OR assault) (Jaipur OR Rajasthan)">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group flex-1">
+                                        <label>Region</label>
+                                        <input type="text" id="feed-region" placeholder="e.g. Rajasthan">
+                                    </div>
+                                    <div class="form-group flex-1">
+                                        <label>Category Hint</label>
+                                        <select id="feed-cat-hint">
+                                            <option value="All">All</option>
+                                            <option value="Sexual Assault">Sexual Assault</option>
+                                            <option value="Domestic Violence">Domestic Violence</option>
+                                            <option value="POCSO / Minor">POCSO / Minor</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-plus"></i> Add Feed</button>
+                            </form>
+                        </div>
+
+                        <div class="feed-table-box">
+                            <h4><i class="fa-solid fa-tower-broadcast"></i> Active News Feeds</h4>
+                            <div class="admin-table-wrapper">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Region</th>
+                                            <th>Status</th>
+                                            <th>Last Fetch</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-feeds-tbody">
+                                        <!-- Feeds populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 4: Raw Sources -->
+                <div id="tab-sources" class="admin-tab-pane">
+                    <div class="admin-toolbar">
+                        <input type="text" id="admin-src-search" placeholder="Search news articles..." class="admin-search-input">
+                        <button id="admin-src-search-btn" class="btn btn-secondary"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+                    </div>
+                    <div class="admin-table-wrapper">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Headline</th>
+                                    <th>Publisher</th>
+                                    <th>Date</th>
+                                    <th>Incident Linked</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-src-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Incident Dialog Modal -->
+    <div id="edit-incident-modal" class="modal">
+        <div class="modal-content edit-modal-content">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-pen-to-square"></i> Edit Incident #<span id="edit-inc-id-display">-</span></h3>
+                <button id="close-edit-btn" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-incident-form" class="admin-form">
+                    <input type="hidden" id="edit-id">
+                    
+                    <div class="form-group">
+                        <label>Incident Title *</label>
+                        <input type="text" id="edit-title" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group flex-1">
+                            <label>Category *</label>
+                            <select id="edit-category">
+                                <option value="Sexual Assault">Sexual Assault</option>
+                                <option value="POCSO / Minor">POCSO / Minor</option>
+                                <option value="Domestic Violence">Domestic Violence</option>
+                                <option value="Dowry Violence">Dowry Violence</option>
+                                <option value="Harassment & Stalking">Harassment & Stalking</option>
+                                <option value="Acid Attack">Acid Attack</option>
+                                <option value="Other GBV">Other GBV</option>
+                            </select>
+                        </div>
+                        <div class="form-group flex-1">
+                            <label>Incident Date</label>
+                            <input type="date" id="edit-date">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group flex-1">
+                            <label>Location / Town</label>
+                            <input type="text" id="edit-location">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label>District</label>
+                            <input type="text" id="edit-district">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label>State</label>
+                            <input type="text" id="edit-state">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group flex-1">
+                            <label>Latitude</label>
+                            <input type="number" step="any" id="edit-lat">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label>Longitude</label>
+                            <input type="number" step="any" id="edit-lon">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label>Legal Status</label>
+                            <select id="edit-status">
+                                <option value="FIR Registered">FIR Registered</option>
+                                <option value="Arrest Made">Arrest Made</option>
+                                <option value="Under Investigation">Under Investigation</option>
+                                <option value="Accused Absconding">Accused Absconding</option>
+                                <option value="Convicted">Convicted</option>
+                                <option value="Bail / Acquittal">Bail / Acquittal</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Summary</label>
+                        <textarea id="edit-summary" rows="4"></textarea>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" id="cancel-edit-btn" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS & MarkerCluster -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>
