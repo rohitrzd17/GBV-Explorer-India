@@ -18,13 +18,37 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./style.css?v=20260913_1">
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+    <link rel="stylesheet" href="./style.css?v=20260913_2">
 </head>
 <body>
     <!-- Top Navigation Bar -->
     <header class="app-header">
         <div class="header-brand">
-            <div class="brand-icon"><i class="fa-solid fa-map-location-dot"></i></div>
+            <div class="brand-icon" title="GBV Explorer India">
+                <svg class="brand-logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="GBV Protection Emblem">
+                    <defs>
+                        <linearGradient id="gbvBrandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#8b5cf6" />
+                            <stop offset="50%" stop-color="#ec4899" />
+                            <stop offset="100%" stop-color="#f43f5e" />
+                        </linearGradient>
+                        <linearGradient id="shieldFill" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#1e1b4b" stop-opacity="0.88" />
+                            <stop offset="100%" stop-color="#0f172a" stop-opacity="0.95" />
+                        </linearGradient>
+                    </defs>
+                    <rect width="32" height="32" rx="8" fill="url(#gbvBrandGrad)" />
+                    <!-- Protective Shield Silhouette -->
+                    <path d="M16 4.8L7.5 8.2v5.8c0 5.4 3.6 10.4 8.5 11.9 4.9-1.5 8.5-6.5 8.5-11.9V8.2L16 4.8z" fill="url(#shieldFill)" stroke="#ffffff" stroke-width="1.3" stroke-linejoin="round"/>
+                    <!-- Gender Protection & Justice Emblem (♀) -->
+                    <circle cx="16" cy="11.8" r="3.2" fill="none" stroke="#fbcfe8" stroke-width="1.6"/>
+                    <line x1="16" y1="15" x2="16" y2="21" stroke="#fbcfe8" stroke-width="1.6" stroke-linecap="round"/>
+                    <line x1="13.2" y1="17.8" x2="18.8" y2="17.8" stroke="#fbcfe8" stroke-width="1.6" stroke-linecap="round"/>
+                    <!-- Spatial Monitoring Locator Node -->
+                    <circle cx="16" cy="11.8" r="1.1" fill="#38bdf8" />
+                </svg>
+            </div>
             <div>
                 <h1>GBV Explorer <span>India</span></h1>
                 <p class="tagline">Spatial Monitoring & Verification of Reported Gender-Based Violence Incidents</p>
@@ -287,7 +311,6 @@
             </div>
             <div class="modal-body">
                 <div class="modal-meta-grid">
-                    <div class="meta-item"><strong><i class="fa-solid fa-calendar-day"></i> Date:</strong> <span id="modal-date">-</span></div>
                     <div class="meta-item"><strong><i class="fa-solid fa-clock-rotate-left"></i> Oldest Article Date:</strong> <span id="modal-oldest-date">-</span></div>
                     <div class="meta-item"><strong><i class="fa-solid fa-clock"></i> Latest Article Date:</strong> <span id="modal-latest-date">-</span></div>
                     <div class="meta-item"><strong><i class="fa-solid fa-location-dot"></i> Location:</strong> <span id="modal-location">-</span></div>
@@ -661,6 +684,6 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- html2canvas for IIPMaps-style high-res map image export -->
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="./app.js?v=20260913_1"></script>
+    <script src="./app.js?v=20260913_2"></script>
 </body>
 </html>

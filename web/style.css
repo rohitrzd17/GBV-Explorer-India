@@ -63,14 +63,25 @@ body {
 .brand-icon {
     width: 36px;
     height: 36px;
-    background: linear-gradient(135deg, #ef4444, #6366f1);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
-    color: #fff;
     flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(236, 72, 153, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+}
+
+.brand-icon:hover {
+    transform: scale(1.06);
+    box-shadow: 0 6px 18px rgba(236, 72, 153, 0.5);
+}
+
+.brand-logo-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .header-brand h1 {

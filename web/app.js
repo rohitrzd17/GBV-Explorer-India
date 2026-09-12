@@ -762,8 +762,8 @@ async function openModal(incidentId) {
     badge.className = `badge ${CATEGORY_BADGES[inc.category] || 'badge-other'}`;
     badge.textContent = inc.category;
 
-    // Date in DD-MM-YYYY format
-    document.getElementById('modal-date').textContent = formatDateDDMMYYYY(inc.incident_date);
+    const dateEl = document.getElementById('modal-date');
+    if (dateEl) dateEl.textContent = formatDateDDMMYYYY(inc.incident_date);
 
     // Location & Status
     document.getElementById('modal-location').textContent = `${inc.district || inc.location_name || 'Unspecified'}, ${inc.state || 'India'}`;
