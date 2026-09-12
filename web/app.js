@@ -107,6 +107,81 @@ function saveClientAdd(incident) {
     }
 }
 
+// Client-side Feeds Overrides (Static GitHub Pages / Offline Persistence)
+let allFeeds = []; // In-memory store of loaded feeds
+
+function getClientFeedOverrides() {
+    try {
+        return JSON.parse(localStorage.getItem('gbv_client_feeds_overrides') || '{"added":[],"deleted":[],"toggled":{}}');
+    } catch (e) {
+        return { added: [], deleted: [], toggled: {} };
+    }
+}
+
+function saveClientFeedOverrides(overrides) {
+    try {
+        localStorage.setItem('gbv_client_feeds_overrides', JSON.stringify(overrides));
+    } catch (e) {
+        console.error('Error saving feed overrides to localStorage:', e);
+    }
+}
+
+function applyClientFeedOverrides(baseFeeds) {
+    const overrides = getClientFeedOverrides();
+    const deletedSet = new Set((overrides.deleted || []).map(Number));
+
+    // 1. Filter out deleted feeds
+    let result = (baseFeeds || []).filter(f => !deletedSet.has(Number(f.id)));
+
+    // 2. Apply active toggles
+    if (overrides.toggled) {
+        result.forEach(f => {
+            if (overrides.toggled[f.id] !== undefined) {
+                f.is_active = overrides.toggled[f.id] ? 1 : 0;
+            }
+        });
+    }
+
+    // 3. Prepend newly added client feeds
+    if (overrides.added && Array.isArray(overrides.added)) {
+        overrides.added.forEach(f => {
+            if (!deletedSet.has(Number(f.id)) && !result.some(existing => Number(existing.id) === Number(f.id))) {
+                if (overrides.toggled && overrides.toggled[f.id] !== undefined) {
+                    f.is_active = overrides.toggled[f.id] ? 1 : 0;
+                }
+                result.unshift(f);
+            }
+        });
+    }
+
+    return result;
+}
+
+function saveClientFeedAdd(feed) {
+    const overrides = getClientFeedOverrides();
+    if (!overrides.added) overrides.added = [];
+    overrides.added = overrides.added.filter(f => Number(f.id) !== Number(feed.id));
+    overrides.added.unshift(feed);
+    saveClientFeedOverrides(overrides);
+}
+
+function saveClientFeedToggle(feedId, isActive) {
+    const overrides = getClientFeedOverrides();
+    if (!overrides.toggled) overrides.toggled = {};
+    overrides.toggled[feedId] = isActive;
+    saveClientFeedOverrides(overrides);
+}
+
+function saveClientFeedDelete(feedId) {
+    const overrides = getClientFeedOverrides();
+    if (!overrides.deleted) overrides.deleted = [];
+    if (!overrides.deleted.includes(feedId)) overrides.deleted.push(feedId);
+    if (overrides.added) {
+        overrides.added = overrides.added.filter(f => Number(f.id) !== Number(feedId));
+    }
+    saveClientFeedOverrides(overrides);
+}
+
 // SHA-256 hash of admin password (plaintext is NEVER stored in source code)
 const ADMIN_PASS_HASH = "ed8c9cfe75c84b881f159ca0a98cdc37b6f93422b6888c3ef29d5acd43fba239";
 
@@ -1333,49 +1408,70 @@ async function deleteIncident(id) {
 // Load Feeds in Admin Table
 async function loadAdminFeeds() {
     const tbody = document.getElementById('admin-feeds-tbody');
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Loading feeds...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted); padding:20px;">Loading feeds...</td></tr>';
     try {
         let feeds = [];
-        if (!isStaticMode) {
-            const res = await fetch('/api/admin/feeds');
-            const data = await res.json();
-            feeds = data.feeds || [];
-        } else {
+        let fetchedFromServer = false;
+        if (!isStaticMode && !window.location.hostname.includes('github.io')) {
+            try {
+                const res = await fetch('/api/admin/feeds');
+                if (res.ok) {
+                    const data = await res.json();
+                    feeds = data.feeds || [];
+                    fetchedFromServer = true;
+                }
+            } catch (apiErr) {
+                fetchedFromServer = false;
+            }
+        }
+
+        if (!fetchedFromServer) {
             const cacheBuster = `?t=${Date.now()}`;
             const res = await fetch(`./data/feeds.json${cacheBuster}`, { cache: 'no-store' });
             const data = await res.json();
             feeds = data.feeds || [];
         }
+
+        // Apply local storage overrides (added, deleted, toggled)
+        feeds = applyClientFeedOverrides(feeds);
+        allFeeds = feeds;
+
         tbody.innerHTML = '';
+
+        if (feeds.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted); padding:20px;">No feeds configured.</td></tr>';
+            return;
+        }
 
         feeds.forEach(f => {
             const tr = document.createElement('tr');
-            const typeBadge = (f.feed_type === 'rss_url' || (f.query && f.query.startsWith('http')))
-                ? '<span class="badge" style="background:#0ea5e9; color:#fff; font-size:0.65rem; padding:2px 5px; border-radius:3px;">RSS XML</span>'
-                : '<span class="badge" style="background:#8b5cf6; color:#fff; font-size:0.65rem; padding:2px 5px; border-radius:3px;">Google News</span>';
+            const isRss = (f.feed_type === 'rss_url' || (f.query && f.query.startsWith('http') && !f.query.includes('news.google.com')));
+            const typeBadge = isRss
+                ? '<span class="badge" style="background:#0ea5e9; color:#fff; font-size:0.68rem; padding:2px 6px; border-radius:4px; font-weight:600; white-space:nowrap;">RSS XML</span>'
+                : '<span class="badge" style="background:#8b5cf6; color:#fff; font-size:0.68rem; padding:2px 6px; border-radius:4px; font-weight:600; white-space:nowrap;">Google News</span>';
 
             const constraintBadge = (f.constraints === 'gbv_strict')
-                ? '<span class="badge" style="background:#10b981; color:#fff; font-size:0.65rem; padding:2px 5px; border-radius:3px;" title="Strict multi-category GBV filtering active"><i class="fa-solid fa-shield-halved"></i> Strict GBV</span>'
-                : `<span class="badge" style="background:#f59e0b; color:#fff; font-size:0.65rem; padding:2px 5px; border-radius:3px;" title="${escapeHtml(f.constraints)}">${escapeHtml(f.constraints || 'Custom')}</span>`;
+                ? '<span class="badge" style="background:#059669; color:#fff; font-size:0.68rem; padding:2px 6px; border-radius:4px; font-weight:600; white-space:nowrap;" title="Strict multi-category GBV filtering active"><i class="fa-solid fa-shield-halved"></i> Strict GBV</span>'
+                : `<span class="badge" style="background:#d97706; color:#fff; font-size:0.68rem; padding:2px 6px; border-radius:4px; font-weight:600; white-space:nowrap;" title="${escapeHtml(f.constraints)}">${escapeHtml(f.constraints || 'Custom')}</span>`;
 
             tr.innerHTML = `
                 <td>
-                    <div style="font-weight:600; font-size:0.85rem;">${escapeHtml(f.name)}</div>
-                    <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                    <div style="font-weight:600; font-size:0.86rem; color:var(--text-main); margin-bottom:2px;">${escapeHtml(f.name)}</div>
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:nowrap;">
                         ${typeBadge}
-                        <span style="font-size:0.7rem; color:var(--text-muted); max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(f.query)}">${escapeHtml(f.query)}</span>
+                        <span style="font-size:0.72rem; color:var(--text-muted); max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-block;" title="${escapeHtml(f.query)}">${escapeHtml(f.query)}</span>
                     </div>
                 </td>
-                <td>${escapeHtml(f.region || 'India')}</td>
-                <td>${constraintBadge}</td>
-                <td>
+                <td style="white-space:nowrap; font-weight:500;">${escapeHtml(f.region || 'India')}</td>
+                <td style="white-space:nowrap;">${constraintBadge}</td>
+                <td style="text-align:center; white-space:nowrap;">
                     <label class="toggle-switch">
                         <input type="checkbox" ${f.is_active ? 'checked' : ''} onchange="toggleFeedActive(${f.id}, this.checked)">
                         <span class="slider"></span>
                     </label>
                 </td>
-                <td style="font-size:0.7rem; color:var(--text-muted);">${f.last_fetched_at ? f.last_fetched_at.slice(0, 16) : 'Never'}</td>
-                <td>
+                <td style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap;">${f.last_fetched_at ? f.last_fetched_at.slice(0, 16) : 'Never'}</td>
+                <td style="text-align:center; white-space:nowrap;">
                     <button class="action-btn action-run" title="Fetch now" onclick="triggerFeedFetch(${f.id})"><i class="fa-solid fa-play"></i></button>
                     <button class="action-btn action-delete" title="Delete feed" onclick="deleteFeed(${f.id})"><i class="fa-solid fa-trash"></i></button>
                 </td>
@@ -1383,7 +1479,7 @@ async function loadAdminFeeds() {
             tbody.appendChild(tr);
         });
     } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="6" style="color: #ef4444; text-align:center;">Failed to load feeds.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="color: #ef4444; text-align:center; padding:20px;">Failed to load feeds.</td></tr>';
     }
 }
 
@@ -1396,37 +1492,44 @@ async function toggleFeedActive(feedId, isActive) {
             body: JSON.stringify({ is_active: isActive })
         });
     } catch (err) {
-        console.error('Failed to toggle feed:', err);
+        console.warn('Backend toggle unavailable, persisting locally.');
     }
+    saveClientFeedToggle(feedId, isActive);
 }
 
 // Trigger Feed Fetch
 async function triggerFeedFetch(feedId) {
+    let serverTriggered = false;
     try {
         const res = await fetch(`/api/admin/feeds/${feedId}/fetch`, { method: 'POST' });
         if (res.ok) {
+            serverTriggered = true;
             alert(`Fetch initiated for feed #${feedId}. New articles will process in the background.`);
             setTimeout(() => {
                 loadAdminFeeds();
                 fetchIncidents();
             }, 3000);
+            return;
         }
     } catch (err) {
-        alert('Failed to trigger feed fetch.');
+        // backend unavailable
+    }
+
+    if (!serverTriggered) {
+        alert(`Feed #${feedId} fetch triggered.\n\nNote: On static GitHub Pages, background ingestion scripts run via Python. Run 'python execution/fetch_news.py' locally to ingest new articles.`);
     }
 }
 
 // Delete Feed
 async function deleteFeed(feedId) {
-    if (!confirm(`Delete feed #${feedId}?`)) return;
+    if (!confirm(`Are you sure you want to delete feed #${feedId}?`)) return;
     try {
-        const res = await fetch(`/api/admin/feeds/${feedId}`, { method: 'DELETE' });
-        if (res.ok) {
-            loadAdminFeeds();
-        }
+        await fetch(`/api/admin/feeds/${feedId}`, { method: 'DELETE' });
     } catch (err) {
-        alert('Failed to delete feed.');
+        console.warn('Backend delete unavailable, deleting locally.');
     }
+    saveClientFeedDelete(feedId);
+    await loadAdminFeeds();
 }
 
 // Load Raw Sources in Admin Table
@@ -1701,18 +1804,59 @@ function setupEvents() {
         }
     });
 
+    // Feed Type Change Handler: adjust query label and placeholder dynamically
+    const feedTypeSelect = document.getElementById('feed-type');
+    const feedQueryInput = document.getElementById('feed-query');
+    const feedQueryLabel = document.getElementById('feed-query-label');
+    const updateQueryPlaceholder = () => {
+        if (!feedTypeSelect || !feedQueryInput || !feedQueryLabel) return;
+        if (feedTypeSelect.value === 'google_news') {
+            feedQueryLabel.textContent = 'Google News Search Keywords / Query *';
+            feedQueryInput.placeholder = 'e.g. ("rape" OR "sexual assault") (Telangana OR Hyderabad)';
+        } else {
+            feedQueryLabel.textContent = 'Direct RSS XML Feed URL *';
+            feedQueryInput.placeholder = 'https://example.com/feed.xml';
+        }
+    };
+    if (feedTypeSelect) {
+        feedTypeSelect.addEventListener('change', updateQueryPlaceholder);
+        updateQueryPlaceholder();
+    }
+
     // Add Feed Form Submit
     document.getElementById('add-feed-form').addEventListener('submit', async (e) => {
         e.preventDefault();
+        let rawQuery = (document.getElementById('feed-query').value || '').trim();
+        const feedType = document.getElementById('feed-type') ? document.getElementById('feed-type').value : 'google_news';
+
+        // Intelligently extract query string if user pasted full Google News URL into keyword query
+        if (feedType === 'google_news' && rawQuery.includes('news.google.com') && rawQuery.includes('q=')) {
+            try {
+                const parsedUrl = new URL(rawQuery);
+                const qParam = parsedUrl.searchParams.get('q');
+                if (qParam) {
+                    rawQuery = decodeURIComponent(qParam);
+                }
+            } catch (err) {
+                // Keep rawQuery if parsing fails
+            }
+        }
+
         const payload = {
-            name: document.getElementById('feed-name').value,
-            feed_type: document.getElementById('feed-type') ? document.getElementById('feed-type').value : 'rss_url',
-            query: document.getElementById('feed-query').value,
-            region: document.getElementById('feed-region').value || 'India',
+            name: (document.getElementById('feed-name').value || '').trim(),
+            feed_type: feedType,
+            query: rawQuery,
+            region: (document.getElementById('feed-region').value || '').trim() || 'India',
             category_hint: document.getElementById('feed-cat-hint').value,
-            constraints: document.getElementById('feed-constraints') ? document.getElementById('feed-constraints').value : 'gbv_strict'
+            constraints: document.getElementById('feed-constraints') ? document.getElementById('feed-constraints').value.trim() : 'gbv_strict'
         };
 
+        if (!payload.name || !payload.query) {
+            alert('Feed Name and Search Query / URL are required.');
+            return;
+        }
+
+        let serverAdded = false;
         try {
             const res = await fetch('/api/admin/feeds', {
                 method: 'POST',
@@ -1720,18 +1864,41 @@ function setupEvents() {
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
-                alert('Feed added successfully!');
-                document.getElementById('add-feed-form').reset();
-                if (document.getElementById('feed-constraints')) {
-                    document.getElementById('feed-constraints').value = 'gbv_strict';
-                }
-                loadAdminFeeds();
-            } else {
-                alert('Failed to add feed.');
+                serverAdded = true;
             }
         } catch (err) {
-            alert('Error adding feed.');
+            console.warn('Backend POST /api/admin/feeds unavailable, saving to client storage.');
         }
+
+        // Generate unique feed ID
+        const existingIds = (allFeeds || []).map(f => Number(f.id) || 0);
+        const newId = Math.max(100, ...existingIds) + 1;
+        const newFeed = {
+            id: newId,
+            name: payload.name,
+            feed_type: payload.feed_type,
+            query: payload.query,
+            region: payload.region,
+            category_hint: payload.category_hint,
+            constraints: payload.constraints,
+            is_active: 1,
+            last_fetched_at: null,
+            created_at: new Date().toISOString().replace('T', ' ').slice(0, 19)
+        };
+
+        if (serverAdded) {
+            alert(`Feed "${payload.name}" added successfully to database!`);
+        } else {
+            saveClientFeedAdd(newFeed);
+            alert(`Feed "${payload.name}" added successfully!\n(Saved to browser storage)`);
+        }
+
+        document.getElementById('add-feed-form').reset();
+        if (document.getElementById('feed-constraints')) {
+            document.getElementById('feed-constraints').value = 'gbv_strict';
+        }
+        if (updateQueryPlaceholder) updateQueryPlaceholder();
+        await loadAdminFeeds();
     });
 
     // Refresh button trigger

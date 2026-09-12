@@ -19,7 +19,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="./favicon.svg">
-    <link rel="stylesheet" href="./style.css?v=20260913_3">
+    <link rel="stylesheet" href="./style.css?v=20260913_4">
 </head>
 <body>
     <!-- Top Navigation Bar -->
@@ -515,13 +515,13 @@
                                 <div class="form-group">
                                     <label>Feed Type *</label>
                                     <select id="feed-type">
-                                        <option value="rss_url" selected>Direct RSS XML Feed URL</option>
-                                        <option value="google_news">Google News Keyword Query</option>
+                                        <option value="google_news" selected>Google News Keyword Query</option>
+                                        <option value="rss_url">Direct RSS XML Feed URL</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label id="feed-query-label">RSS Feed URL or Search Query *</label>
-                                    <input type="text" id="feed-query" required placeholder="https://example.com/rss.xml">
+                                    <label id="feed-query-label">Google News Search Keywords / Query *</label>
+                                    <input type="text" id="feed-query" required placeholder='e.g. ("rape" OR "sexual assault") (Telangana OR Hyderabad)'>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group flex-1">
@@ -695,6 +695,6 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- html2canvas for IIPMaps-style high-res map image export -->
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="./app.js?v=20260913_3"></script>
+    <script src="./app.js?v=20260913_4"></script>
 </body>
 </html>
