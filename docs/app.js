@@ -9,6 +9,11 @@ let indianStatesList = [];
 let isStaticMode = false;
 let isAdminAuthenticated = false; // In-memory only: resets on page refresh
 
+// IIPMaps-inspired Choropleth & Spatial State Variables
+let currentLayerMode = 'clusters'; // 'clusters' | 'choropleth' | 'hybrid'
+let stateBoundariesGeoJSON = null;
+let choroplethLayer = null;
+
 // Utility: Clean HTML tags and entities from plain text
 function cleanHtmlText(text) {
     if (!text) return '';
@@ -207,6 +212,7 @@ function initMap() {
 
     // Apply official boundaries compliance
     loadIndiaBoundaries();
+    loadIndiaStateBoundaries();
 
     markersGroup = L.markerClusterGroup({
         showCoverageOnHover: false,
@@ -220,6 +226,22 @@ function initMap() {
         disableClusteringAtZoom: 16
     });
     map.addLayer(markersGroup);
+}
+
+// Load Official India State Boundaries for Thematic Choropleth (Survey of India Compliant)
+async function loadIndiaStateBoundaries() {
+    try {
+        const cacheBuster = `?t=${Date.now()}`;
+        const res = await fetch(`./data/india-states.geojson${cacheBuster}`, { cache: 'no-store' });
+        if (res.ok) {
+            stateBoundariesGeoJSON = await res.json();
+            if (currentLayerMode !== 'clusters') {
+                renderChoroplethLayer();
+            }
+        }
+    } catch (err) {
+        console.warn('Could not load india-states.geojson:', err);
+    }
 }
 
 // Create custom pin icon
@@ -369,6 +391,7 @@ function applyFilters() {
 
     renderMapMarkers();
     renderIncidentList();
+    renderChoroplethLayer();
 }
 
 // Render Leaflet Markers
@@ -397,6 +420,219 @@ function renderMapMarkers() {
             markerMap.set(inc.id, marker);
         }
     });
+}
+
+// State Name Normalization
+function normalizeStateName(name) {
+    if (!name) return '';
+    const n = name.trim().toLowerCase();
+    if (n === 'jammu and kashmir' || n === 'jammu & kashmir') return 'Jammu and Kashmir';
+    if (n === 'andaman and nicobar islands' || n === 'andaman & nicobar') return 'Andaman and Nicobar Islands';
+    if (n.includes('dadra') || n.includes('daman')) return 'Dadra and Nagar Haveli';
+    if (n === 'nct of delhi' || n === 'delhi') return 'Delhi';
+    if (n === 'orissa' || n === 'odisha') return 'Odisha';
+    if (n === 'telengana' || n === 'telangana') return 'Telangana';
+    if (n === 'pondicherry' || n === 'puducherry') return 'Puducherry';
+    return name.trim();
+}
+
+// Compute Aggregated Incident Stats by State
+function getIncidentStatsByState() {
+    const statsMap = new Map();
+    const sourceList = (filteredIncidents && filteredIncidents.length > 0) ? filteredIncidents : allIncidents;
+    sourceList.forEach(inc => {
+        const rawState = inc.state;
+        if (!rawState) return;
+        const stateKey = normalizeStateName(rawState);
+        if (!statsMap.has(stateKey)) {
+            statsMap.set(stateKey, {
+                name: stateKey,
+                count: 0,
+                categories: {},
+                statuses: {}
+            });
+        }
+        const s = statsMap.get(stateKey);
+        s.count += 1;
+        s.categories[inc.category] = (s.categories[inc.category] || 0) + 1;
+        const status = inc.legal_status || 'Under Investigation';
+        s.statuses[status] = (s.statuses[status] || 0) + 1;
+    });
+    return statsMap;
+}
+
+// Sequential Color Scale (IIPMaps-inspired D3 Red/Crimson gradient)
+function getChoroplethColor(count, maxCount) {
+    if (!count || count === 0) {
+        return 'rgba(241, 245, 249, 0.25)'; // Muted translucent slate for 0 reports
+    }
+    const ratio = Math.min(1, Math.max(0, count / (maxCount || 1)));
+    if (ratio < 0.15) return '#fee2e2'; // Very light red
+    if (ratio < 0.35) return '#fca5a5'; // Soft coral
+    if (ratio < 0.55) return '#f87171'; // Medium red
+    if (ratio < 0.75) return '#dc2626'; // Vivid crimson
+    return '#7f1d1d';                   // Deep dark burgundy
+}
+
+// Render Thematic State Choropleth Layer
+function renderChoroplethLayer() {
+    if (choroplethLayer && map.hasLayer(choroplethLayer)) {
+        map.removeLayer(choroplethLayer);
+        choroplethLayer = null;
+    }
+
+    const choroplethLegend = document.getElementById('choropleth-legend');
+    const pinLegend = document.getElementById('map-legend');
+
+    if (currentLayerMode === 'clusters') {
+        if (choroplethLegend) choroplethLegend.classList.add('hidden');
+        if (pinLegend) pinLegend.classList.remove('hidden');
+        if (!map.hasLayer(markersGroup)) map.addLayer(markersGroup);
+        return;
+    }
+
+    if (currentLayerMode === 'choropleth') {
+        if (map.hasLayer(markersGroup)) map.removeLayer(markersGroup);
+        if (choroplethLegend) choroplethLegend.classList.remove('hidden');
+        if (pinLegend) pinLegend.classList.add('hidden');
+    } else if (currentLayerMode === 'hybrid') {
+        if (!map.hasLayer(markersGroup)) map.addLayer(markersGroup);
+        if (choroplethLegend) choroplethLegend.classList.remove('hidden');
+        if (pinLegend) pinLegend.classList.remove('hidden');
+    }
+
+    if (!stateBoundariesGeoJSON) return;
+
+    const stateStats = getIncidentStatsByState();
+    let maxCount = 1;
+    stateStats.forEach(s => {
+        if (s.count > maxCount) maxCount = s.count;
+    });
+
+    const rangeLabel = document.getElementById('choropleth-range-label');
+    if (rangeLabel) {
+        rangeLabel.textContent = `0 – ${maxCount}+ Reports`;
+    }
+
+    const tooltipEl = document.getElementById('state-tooltip');
+
+    choroplethLayer = L.geoJSON(stateBoundariesGeoJSON, {
+        style: (feature) => {
+            const stName = normalizeStateName(feature.properties.st_nm);
+            const stats = stateStats.get(stName);
+            const count = stats ? stats.count : 0;
+            const fillCol = getChoroplethColor(count, maxCount);
+            const fillOp = (currentLayerMode === 'hybrid') ? 0.38 : 0.72;
+
+            return {
+                fillColor: fillCol,
+                weight: 1.2,
+                opacity: 0.85,
+                color: '#1e293b',
+                fillOpacity: fillOp
+            };
+        },
+        onEachFeature: (feature, layer) => {
+            const stName = normalizeStateName(feature.properties.st_nm);
+            const stats = stateStats.get(stName);
+            const count = stats ? stats.count : 0;
+
+            layer.on({
+                mouseover: (e) => {
+                    const l = e.target;
+                    l.setStyle({
+                        weight: 2.8,
+                        color: '#38bdf8',
+                        fillOpacity: (currentLayerMode === 'hybrid') ? 0.65 : 0.9
+                    });
+                    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                        l.bringToFront();
+                    }
+
+                    if (tooltipEl) {
+                        let topCat = 'None';
+                        if (stats && stats.categories) {
+                            const sortedCats = Object.entries(stats.categories).sort((a, b) => b[1] - a[1]);
+                            if (sortedCats.length > 0) topCat = `${sortedCats[0][0]} (${sortedCats[0][1]})`;
+                        }
+
+                        const totalActive = filteredIncidents.length || 1;
+                        const pct = ((count / totalActive) * 100).toFixed(1);
+
+                        tooltipEl.innerHTML = `
+                            <div class="state-tooltip-title">
+                                <span>${escapeHtml(feature.properties.st_nm)}</span>
+                                <span class="state-tooltip-count">${count} ${count === 1 ? 'Report' : 'Reports'}</span>
+                            </div>
+                            <div class="state-tooltip-row">
+                                <span>% of Active Reports:</span>
+                                <strong>${pct}%</strong>
+                            </div>
+                            <div class="state-tooltip-row">
+                                <span>Top Category:</span>
+                                <strong>${escapeHtml(topCat)}</strong>
+                            </div>
+                            <div class="state-tooltip-hint"><i class="fa-solid fa-arrow-pointer"></i> Click to filter & zoom into state</div>
+                        `;
+                        tooltipEl.classList.remove('hidden');
+                    }
+                },
+                mousemove: (e) => {
+                    if (tooltipEl) {
+                        const mapContainer = document.getElementById('map-container');
+                        const rect = mapContainer.getBoundingClientRect();
+                        const x = e.originalEvent.clientX - rect.left;
+                        const y = e.originalEvent.clientY - rect.top;
+                        tooltipEl.style.left = `${x}px`;
+                        tooltipEl.style.top = `${y}px`;
+                    }
+                },
+                mouseout: (e) => {
+                    if (choroplethLayer) {
+                        choroplethLayer.resetStyle(e.target);
+                    }
+                    if (tooltipEl) {
+                        tooltipEl.classList.add('hidden');
+                    }
+                },
+                click: (e) => {
+                    if (tooltipEl) tooltipEl.classList.add('hidden');
+                    map.fitBounds(e.target.getBounds(), { padding: [30, 30], maxZoom: 8 });
+
+                    const stateSelect = document.getElementById('filter-state');
+                    if (stateSelect) {
+                        for (let opt of stateSelect.options) {
+                            if (normalizeStateName(opt.value) === stName || opt.value === feature.properties.st_nm) {
+                                stateSelect.value = opt.value;
+                                applyFilters();
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+
+    choroplethLayer.addTo(map);
+}
+
+// Switch Map Layer Mode (Clusters / Choropleth / Hybrid)
+function setLayerMode(mode) {
+    if (mode !== 'clusters' && mode !== 'choropleth' && mode !== 'hybrid') return;
+    currentLayerMode = mode;
+
+    // Update active state in desktop header
+    document.querySelectorAll('.layer-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+
+    // Update active state in mobile menu
+    document.querySelectorAll('.mobile-layer-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+
+    renderChoroplethLayer();
 }
 
 // Render Side Drawer List
@@ -571,6 +807,163 @@ function exportCSV() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+// ----------------- SHEETJS EXCEL (.XLSX) EXPORT (IIPMaps Stack) -----------------
+
+function exportXLSX() {
+    if (typeof XLSX === 'undefined') {
+        alert('Excel export library is loading, please try again in a moment.');
+        return;
+    }
+
+    const listToExport = (filteredIncidents && filteredIncidents.length > 0) ? filteredIncidents : allIncidents;
+    if (listToExport.length === 0) {
+        alert('No incidents to export.');
+        return;
+    }
+
+    // 1. Incidents dataset sheet
+    const incidentRows = listToExport.map(inc => ({
+        "Incident ID": inc.id,
+        "Title": cleanHtmlText(inc.title),
+        "Category": inc.category,
+        "Incident Date": inc.incident_date || '',
+        "Location": inc.location_name || '',
+        "District": inc.district || '',
+        "State": inc.state || '',
+        "Latitude": inc.latitude || '',
+        "Longitude": inc.longitude || '',
+        "Legal Status": inc.legal_status || '',
+        "Source Count": inc.source_count || 1,
+        "Publishers": inc.publishers || '',
+        "Primary URL": inc.primary_url || '',
+        "Summary": cleanHtmlText(inc.summary || '')
+    }));
+
+    // 2. Thematic State Summary Sheet
+    const stateStats = getIncidentStatsByState();
+    const stateSummaryRows = [];
+    stateStats.forEach((st, name) => {
+        const sortedCats = Object.entries(st.categories).sort((a, b) => b[1] - a[1]);
+        stateSummaryRows.push({
+            "State / UT": name,
+            "Total Incidents": st.count,
+            "Top Category": sortedCats.length > 0 ? sortedCats[0][0] : '-',
+            "Sexual Assault": st.categories["Sexual Assault"] || 0,
+            "POCSO / Minor": st.categories["POCSO / Minor"] || 0,
+            "Domestic Violence": st.categories["Domestic Violence"] || 0,
+            "Dowry Violence": st.categories["Dowry Violence"] || 0,
+            "Harassment & Stalking": st.categories["Harassment & Stalking"] || 0,
+            "Acid Attack": st.categories["Acid Attack"] || 0,
+            "Other GBV": st.categories["Other GBV"] || 0
+        });
+    });
+    stateSummaryRows.sort((a, b) => b["Total Incidents"] - a["Total Incidents"]);
+
+    const wb = XLSX.utils.book_new();
+    const wsIncidents = XLSX.utils.json_to_sheet(incidentRows);
+    const wsSummary = XLSX.utils.json_to_sheet(stateSummaryRows);
+
+    XLSX.utils.book_append_sheet(wb, wsIncidents, "Incidents");
+    XLSX.utils.book_append_sheet(wb, wsSummary, "State Density Summary");
+
+    const dateStr = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `GBV_Explorer_India_Report_${dateStr}.xlsx`);
+}
+
+// ----------------- HIGH-RES MAP IMAGE EXPORT (IIPMaps Stack) -----------------
+
+async function exportMapImage() {
+    if (typeof html2canvas === 'undefined') {
+        alert('Map image exporter is still loading. Please try again in a few seconds.');
+        return;
+    }
+
+    const mapEl = document.getElementById('map-container');
+    if (!mapEl) return;
+
+    const origCursor = document.body.style.cursor;
+    document.body.style.cursor = 'wait';
+
+    try {
+        // Temporarily hide floating interactive controls during capture
+        const floatingCtrls = document.querySelector('.zoom-floating-controls');
+        const filterBar = document.getElementById('filter-bar');
+        const sideDrawer = document.getElementById('side-drawer');
+        const zoomCtrl = document.querySelector('.leaflet-control-zoom');
+        
+        const prevFloating = floatingCtrls ? floatingCtrls.style.display : '';
+        const prevFilter = filterBar ? filterBar.style.display : '';
+        const prevDrawer = sideDrawer ? sideDrawer.style.display : '';
+        const prevZoom = zoomCtrl ? zoomCtrl.style.display : '';
+        
+        if (floatingCtrls) floatingCtrls.style.display = 'none';
+        if (filterBar) filterBar.style.display = 'none';
+        if (sideDrawer) sideDrawer.style.display = 'none';
+        if (zoomCtrl) zoomCtrl.style.display = 'none';
+
+        const canvas = await html2canvas(mapEl, {
+            useCORS: true,
+            allowTaint: true,
+            scale: 2, // 2x Retina high-resolution render
+            logging: false,
+            backgroundColor: '#0f172a'
+        });
+
+        // Restore styles
+        if (floatingCtrls) floatingCtrls.style.display = prevFloating;
+        if (filterBar) filterBar.style.display = prevFilter;
+        if (sideDrawer) sideDrawer.style.display = prevDrawer;
+        if (zoomCtrl) zoomCtrl.style.display = prevZoom;
+        document.body.style.cursor = origCursor;
+
+        // Compose final image with branded banner and Survey of India compliance footer
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = canvas.width;
+        finalCanvas.height = canvas.height + 130;
+        const ctx = finalCanvas.getContext('2d');
+
+        // Header Background
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, finalCanvas.width, 75);
+
+        // Header Title
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 26px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText('GBV Explorer India — Spatial Incident Distribution', 28, 45);
+
+        // Header Subtitle / Stats Chip
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '500 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        const statsTxt = `Reports: ${filteredIncidents.length} | Mode: ${currentLayerMode.toUpperCase()} | ${new Date().toLocaleDateString('en-IN')}`;
+        ctx.fillText(statsTxt, finalCanvas.width - 28 - ctx.measureText(statsTxt).width, 45);
+
+        // Draw Map
+        ctx.drawImage(canvas, 0, 75);
+
+        // Footer Background
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, finalCanvas.height - 55, finalCanvas.width, 55);
+
+        // Footer Attribution
+        ctx.fillStyle = '#64748b';
+        ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText('Boundaries: OpenStreetMap India / Survey of India compliant • Verified News Monitoring', 28, finalCanvas.height - 22);
+
+        const brandTxt = 'https://rohitrzd17.github.io/GBV-Explorer-India/';
+        ctx.fillText(brandTxt, finalCanvas.width - 28 - ctx.measureText(brandTxt).width, finalCanvas.height - 22);
+
+        // Trigger Download
+        const link = document.createElement('a');
+        link.download = `GBV_Explorer_India_Map_${new Date().toISOString().split('T')[0]}.png`;
+        link.href = finalCanvas.toDataURL('image/png');
+        link.click();
+    } catch (err) {
+        document.body.style.cursor = origCursor;
+        console.error('Error generating map image:', err);
+        alert('Could not export map image: ' + err.message);
+    }
 }
 
 // ----------------- ADMIN SECURITY & PORTAL -----------------
@@ -947,8 +1340,53 @@ function setupEvents() {
         }
     });
 
-    // CSV Export button trigger
-    document.getElementById('export-csv-btn').addEventListener('click', exportCSV);
+    // Layer Mode Switcher (Clusters / Choropleth / Hybrid)
+    document.querySelectorAll('.layer-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const mode = e.currentTarget.dataset.mode;
+            setLayerMode(mode);
+        });
+    });
+
+    // Export Dropdown Trigger
+    const exportDropdownBtn = document.getElementById('export-dropdown-btn');
+    const exportDropdownMenu = document.getElementById('export-dropdown-menu');
+    if (exportDropdownBtn && exportDropdownMenu) {
+        exportDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            exportDropdownMenu.classList.toggle('hidden');
+        });
+        document.addEventListener('click', (e) => {
+            if (!exportDropdownBtn.contains(e.target) && !exportDropdownMenu.contains(e.target)) {
+                exportDropdownMenu.classList.add('hidden');
+            }
+        });
+    }
+
+    // Export Action Triggers
+    const exportCsvBtn = document.getElementById('export-csv-btn');
+    if (exportCsvBtn) {
+        exportCsvBtn.addEventListener('click', () => {
+            if (exportDropdownMenu) exportDropdownMenu.classList.add('hidden');
+            exportCSV();
+        });
+    }
+
+    const exportXlsxBtn = document.getElementById('export-xlsx-btn');
+    if (exportXlsxBtn) {
+        exportXlsxBtn.addEventListener('click', () => {
+            if (exportDropdownMenu) exportDropdownMenu.classList.add('hidden');
+            exportXLSX();
+        });
+    }
+
+    const exportImgBtn = document.getElementById('export-image-btn');
+    if (exportImgBtn) {
+        exportImgBtn.addEventListener('click', () => {
+            if (exportDropdownMenu) exportDropdownMenu.classList.add('hidden');
+            exportMapImage();
+        });
+    }
 
     // Admin Auth & Modal triggers
     document.getElementById('admin-btn').addEventListener('click', handleAdminClick);
@@ -1211,11 +1649,35 @@ function setupEvents() {
     if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', toggleMobileMenu);
     if (closeMobileMenuBtn) closeMobileMenuBtn.addEventListener('click', closeMobileMenu);
 
+    // Mobile Layer Switcher
+    document.querySelectorAll('.mobile-layer-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const mode = e.currentTarget.dataset.mode;
+            setLayerMode(mode);
+        });
+    });
+
     const mobileExportBtn = document.getElementById('mobile-export-csv-btn');
     if (mobileExportBtn) {
         mobileExportBtn.addEventListener('click', () => {
             closeMobileMenu();
             exportCSV();
+        });
+    }
+
+    const mobileExportXlsxBtn = document.getElementById('mobile-export-xlsx-btn');
+    if (mobileExportXlsxBtn) {
+        mobileExportXlsxBtn.addEventListener('click', () => {
+            closeMobileMenu();
+            exportXLSX();
+        });
+    }
+
+    const mobileExportImgBtn = document.getElementById('mobile-export-img-btn');
+    if (mobileExportImgBtn) {
+        mobileExportImgBtn.addEventListener('click', () => {
+            closeMobileMenu();
+            exportMapImage();
         });
     }
 

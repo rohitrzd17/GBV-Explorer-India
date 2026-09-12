@@ -1554,3 +1554,270 @@ input:checked + .slider:before {
         border-radius: 0;
     }
 }
+
+/* ==========================================================================
+   IIPMAPS-INSPIRED STYLES: THEMATIC CHOROPLETH & EXPORT ENGINE
+   ========================================================================== */
+
+/* Layer Mode Switcher Pill (Header) */
+.layer-switcher-pill {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 9999px;
+    padding: 3px;
+    gap: 2px;
+    backdrop-filter: blur(8px);
+}
+
+.layer-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border: none;
+    border-radius: 9999px;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.layer-btn i {
+    font-size: 0.75rem;
+}
+
+.layer-btn:hover {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.layer-btn.active {
+    background: #3b82f6;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+/* Export Dropdown */
+.export-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.export-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 220px;
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+    padding: 6px;
+    z-index: 2500;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    animation: fadeInMenu 0.15s ease-out;
+}
+
+.export-dropdown-menu.hidden {
+    display: none !important;
+}
+
+@keyframes fadeInMenu {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.export-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #e2e8f0;
+    font-size: 0.82rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.export-menu-item i {
+    width: 16px;
+    font-size: 0.9rem;
+    color: #38bdf8;
+}
+
+.export-menu-item:hover {
+    background: rgba(56, 189, 248, 0.12);
+    color: #ffffff;
+}
+
+/* IIPMaps-style Choropleth Density Gradient Legend */
+.choropleth-legend {
+    position: absolute;
+    bottom: 24px;
+    left: 16px;
+    z-index: 1000;
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 10px 14px;
+    width: 240px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    pointer-events: auto;
+    font-family: inherit;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.choropleth-legend.hidden {
+    display: none !important;
+}
+
+.choropleth-legend-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #f8fafc;
+    margin-bottom: 6px;
+}
+
+.choropleth-legend-header i {
+    color: #ef4444;
+    margin-right: 4px;
+}
+
+.choropleth-legend-stats {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.choropleth-gradient-bar {
+    height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(to right, #fee2e2, #fca5a5, #ef4444, #b91c1c, #450a0a);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+    margin-bottom: 4px;
+}
+
+.choropleth-gradient-ticks {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* Floating State Hover Tooltip (IIPMaps Style) */
+.state-choropleth-tooltip {
+    position: absolute;
+    z-index: 2200;
+    pointer-events: none;
+    background: rgba(15, 23, 42, 0.94);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #f8fafc;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+    font-size: 0.8rem;
+    max-width: 250px;
+    transform: translate(-50%, -100%);
+    margin-top: -12px;
+    transition: opacity 0.1s ease;
+}
+
+.state-choropleth-tooltip.hidden {
+    display: none !important;
+}
+
+.state-tooltip-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #ffffff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.state-tooltip-count {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #ef4444;
+}
+
+.state-tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.72rem;
+    color: #cbd5e1;
+    margin-top: 3px;
+}
+
+.state-tooltip-hint {
+    margin-top: 6px;
+    padding-top: 4px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.1);
+    font-size: 0.65rem;
+    color: #38bdf8;
+    text-align: center;
+}
+
+/* Mobile Quick Menu Section */
+.mobile-menu-section {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.mobile-section-label {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.mobile-layer-switcher {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+}
+
+.mobile-layer-btn {
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-muted);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mobile-layer-btn.active {
+    background: #3b82f6;
+    color: #ffffff;
+    border-color: #3b82f6;
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+}
+

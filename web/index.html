@@ -48,9 +48,37 @@
         </div>
 
         <div class="header-actions">
-            <button id="export-csv-btn" class="btn btn-success" title="Download incidents report as CSV">
-                <i class="fa-solid fa-file-arrow-down"></i> Export CSV
-            </button>
+            <!-- IIPMaps-style Map Layer Mode Switcher -->
+            <div class="layer-switcher-pill" title="Toggle Map Layer View">
+                <button type="button" class="layer-btn active" data-mode="clusters" id="btn-mode-clusters" title="Pin Clusters View">
+                    <i class="fa-solid fa-location-dot"></i> <span>Clusters</span>
+                </button>
+                <button type="button" class="layer-btn" data-mode="choropleth" id="btn-mode-choropleth" title="Thematic State Choropleth Heatmap">
+                    <i class="fa-solid fa-chart-area"></i> <span>Choropleth</span>
+                </button>
+                <button type="button" class="layer-btn" data-mode="hybrid" id="btn-mode-hybrid" title="Hybrid Overlaid View">
+                    <i class="fa-solid fa-layer-group"></i> <span>Hybrid</span>
+                </button>
+            </div>
+
+            <!-- Export Dropdown (CSV, Excel, Map PNG) -->
+            <div class="export-dropdown-wrapper">
+                <button id="export-dropdown-btn" class="btn btn-success" title="Download data reports or map image" type="button">
+                    <i class="fa-solid fa-file-arrow-down"></i> Export <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; margin-left: 3px;"></i>
+                </button>
+                <div class="export-dropdown-menu hidden" id="export-dropdown-menu">
+                    <button id="export-csv-btn" class="export-menu-item" type="button">
+                        <i class="fa-solid fa-file-csv"></i> Export CSV
+                    </button>
+                    <button id="export-xlsx-btn" class="export-menu-item" type="button">
+                        <i class="fa-solid fa-file-excel"></i> Export Excel (.xlsx)
+                    </button>
+                    <button id="export-image-btn" class="export-menu-item" type="button">
+                        <i class="fa-solid fa-camera"></i> Export Map as Image (PNG)
+                    </button>
+                </div>
+            </div>
+
             <button id="admin-btn" class="btn btn-warning" title="Open Database & Feeds Manager (Protected)">
                 <i class="fa-solid fa-lock"></i> Database Admin
             </button>
@@ -91,8 +119,18 @@
                     <span class="m-stat-val" id="mobile-menu-top-cat">-</span>
                 </div>
             </div>
+            <div class="mobile-menu-section">
+                <label class="mobile-section-label"><i class="fa-solid fa-layer-group"></i> Map Layer View</label>
+                <div class="mobile-layer-switcher">
+                    <button type="button" class="mobile-layer-btn active" data-mode="clusters">Clusters</button>
+                    <button type="button" class="mobile-layer-btn" data-mode="choropleth">Choropleth</button>
+                    <button type="button" class="mobile-layer-btn" data-mode="hybrid">Hybrid</button>
+                </div>
+            </div>
             <div class="mobile-menu-buttons">
-                <button id="mobile-export-csv-btn" class="btn btn-success btn-block" type="button"><i class="fa-solid fa-file-arrow-down"></i> Export CSV</button>
+                <button id="mobile-export-csv-btn" class="btn btn-success btn-block" type="button"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+                <button id="mobile-export-xlsx-btn" class="btn btn-success btn-block" type="button"><i class="fa-solid fa-file-excel"></i> Export Excel (.xlsx)</button>
+                <button id="mobile-export-img-btn" class="btn btn-secondary btn-block" type="button"><i class="fa-solid fa-camera"></i> Export Map as Image</button>
                 <button id="mobile-admin-btn" class="btn btn-warning btn-block" type="button"><i class="fa-solid fa-lock"></i> Database Admin</button>
                 <button id="mobile-refresh-btn" class="btn btn-primary btn-block" type="button"><i class="fa-solid fa-arrows-rotate"></i> Refresh Feeds</button>
             </div>
@@ -194,6 +232,25 @@
                     <div class="legend-item"><span class="legend-dot dot-acid"></span> Acid Attack</div>
                 </div>
             </div>
+
+            <!-- IIPMaps-style Thematic Choropleth Gradient Legend -->
+            <div class="choropleth-legend hidden" id="choropleth-legend">
+                <div class="choropleth-legend-header">
+                    <span><i class="fa-solid fa-chart-area"></i> State Density</span>
+                    <span class="choropleth-legend-stats" id="choropleth-range-label">0 – 130+ Reports</span>
+                </div>
+                <div class="choropleth-gradient-bar"></div>
+                <div class="choropleth-gradient-ticks">
+                    <span>0</span>
+                    <span>25</span>
+                    <span>50</span>
+                    <span>75</span>
+                    <span>100+</span>
+                </div>
+            </div>
+
+            <!-- Floating State Hover Tooltip (IIPMaps Style) -->
+            <div id="state-tooltip" class="state-choropleth-tooltip hidden"></div>
         </div>
 
         <!-- Side Drawer: Incident List (Full-Page on Mobile, Overlay on PC) -->
@@ -593,6 +650,12 @@
     <!-- Leaflet JS & MarkerCluster -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <script src="./app.js?v=20260912_8"></script>
+    <!-- Turf.js for client-side spatial calculations & bounding (IIPMaps Stack) -->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js"></script>
+    <!-- SheetJS for multi-sheet Excel (.xlsx) data export (IIPMaps Stack) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- html2canvas for IIPMaps-style high-res map image export -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="./app.js?v=20260912_9"></script>
 </body>
 </html>
