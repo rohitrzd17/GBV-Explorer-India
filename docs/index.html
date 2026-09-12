@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./style.css?v=20260912_5">
+    <link rel="stylesheet" href="./style.css?v=20260912_6">
 </head>
 <body>
     <!-- Top Navigation Bar -->
@@ -141,7 +141,10 @@
                         <select id="filter-date">
                             <option value="all">All Available</option>
                             <option value="7d">Last 7 Days</option>
-                            <option value="30d" selected>Last 30 Days</option>
+                            <option value="30d">Last 30 Days (1M)</option>
+                            <option value="60d">Last 60 Days (2M)</option>
+                            <option value="90d">Last 90 Days (3M)</option>
+                            <option value="180d" selected>Last 6 Months</option>
                         </select>
                     </div>
 
@@ -587,6 +590,6 @@
     <!-- Leaflet JS & MarkerCluster -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <script src="./app.js?v=20260912_5"></script>
+    <script src="./app.js?v=20260912_6"></script>
 </body>
 </html>

@@ -19,8 +19,8 @@ from execution.database import init_db, save_raw_source, get_all_feeds, get_conn
 
 RAW_NEWS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".tmp", "raw_news")
 
-# Negative foreign keywords to prevent US/UK crime stories from Google News
-FOREIGN_NEGATIVES = "-Kentucky -Massachusetts -Clancy -Mayfield -Florida -Texas -Ohio -Sheriff -California"
+# Negative foreign keywords to prevent foreign crime stories from Google News
+FOREIGN_NEGATIVES = "-Kentucky -Massachusetts -Clancy -Mayfield -Florida -Texas -Ohio -Sheriff -California -Britain -UK -London -Australia -Sydney -Melbourne -Canada -Toronto -Scotland -Ireland -Galway -Romania -Spain -Pelicot -France -Pakistan -Bangladesh -Nepal -Utah -Idaho -Pennsylvania"
 
 # Positive GBV classification patterns
 GBV_POSITIVE_PATTERNS = [
@@ -72,6 +72,18 @@ def passes_gbv_constraints(headline: str, snippet: str, constraints: str = "gbv_
     # 1. Reject metaphorical or political usage
     for excl in GBV_METAPHOR_EXCLUSIONS:
         if re.search(excl, text):
+            return False
+
+    # 2. Reject foreign / international crime stories
+    foreign_check = [
+        r"\b(britain|uk|england|wales|scotland|london|nottingham|portsmouth|birmingham)\b",
+        r"\b(us|usa|united states|texas|florida|california|ohio|massachusetts|kentucky|jpmorgan|syracuse|mountain home|utah|idaho)\b",
+        r"\b(australia|sydney|melbourne|brisbane|canberra|adelaide|victoria|galway|ireland)\b",
+        r"\b(france|paris|pelicot|spain|ceuta|madrid|barcelona|italy|germany|netherlands|romania|andrew tate)\b",
+        r"\b(pakistan|lahore|karachi|bangladesh|dhaka|nepal|kathmandu|sri lanka|canada|toronto)\b"
+    ]
+    for pat in foreign_check:
+        if re.search(pat, text):
             return False
 
     # 2. Check custom constraints if provided and not default

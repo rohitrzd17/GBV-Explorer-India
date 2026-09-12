@@ -75,6 +75,19 @@ def rule_based_extract(headline: str, snippet: str, published_at: str) -> Option
     text = f"{headline}. {snippet}"
     text_lower = text.lower()
 
+    # 0. Strictly reject international / foreign stories
+    foreign_patterns = [
+        r"\b(britain|uk|england|wales|scotland|london|nottingham|portsmouth|kent|essex|manchester|birmingham)\b",
+        r"\b(us|usa|united states|texas|florida|california|ohio|massachusetts|kentucky|georgia|colorado|new york|jpmorgan|syracuse|mountain home|wilkins|utah|idaho)\b",
+        r"\b(australia|sydney|melbourne|brisbane|canberra|perth|adelaide|victoria|galway|ireland)\b",
+        r"\b(france|paris|pelicot|spain|ceuta|madrid|barcelona|italy|germany|netherlands|romania|andrew tate)\b",
+        r"\b(pakistan|lahore|karachi|islamabad|bangladesh|dhaka|nepal|kathmandu|sri lanka)\b",
+        r"\b(canada|toronto|vancouver|ottawa|israel|gaza|hamas)\b"
+    ]
+    for pat in foreign_patterns:
+        if re.search(pat, text_lower):
+            return None
+
     # 1. Determine category
     category = None
     for pattern, cat_name in CATEGORY_PATTERNS:
@@ -153,6 +166,33 @@ def rule_based_extract(headline: str, snippet: str, published_at: str) -> Option
                 found_state = s
                 if not found_place:
                     found_place = s
+                break
+
+    # F. Judicial & Court Attribution Mappings (Assign to seat of court)
+    if not found_place:
+        court_patterns = [
+            (r"\b(supreme court|sc asks|cji|constitutional validity of marital rape|union's stand|plea in sc)\b", "New Delhi", "Delhi"),
+            (r"\b(bombay high court|bombay hc)\b", "Mumbai", "Maharashtra"),
+            (r"\b(allahabad high court|allahabad hc)\b", "Prayagraj", "Uttar Pradesh"),
+            (r"\b(calcutta high court|calcutta hc)\b", "Kolkata", "West Bengal"),
+            (r"\b(delhi high court|delhi hc)\b", "New Delhi", "Delhi"),
+            (r"\b(madras high court|madras hc)\b", "Chennai", "Tamil Nadu"),
+            (r"\b(karnataka high court|karnataka hc)\b", "Bengaluru", "Karnataka"),
+            (r"\b(kerala high court|kerala hc)\b", "Kochi", "Kerala"),
+            (r"\b(patna high court|patna hc)\b", "Patna", "Bihar"),
+            (r"\b(punjab and haryana high court|punjab & haryana hc)\b", "Chandigarh", "Chandigarh"),
+            (r"\b(telangana high court|telangana hc)\b", "Hyderabad", "Telangana"),
+            (r"\b(high court|hc grants|hc rejects|hc asks|hc quashes)\b", "New Delhi", "Delhi"),
+            (r"\b(prajwal revanna|revanna)\b", "Hassan", "Karnataka"),
+            (r"\b(ram rahim|dera sacha sauda)\b", "Sirsa", "Haryana"),
+            (r"\b(sandeshkhali)\b", "Sandeshkhali", "West Bengal"),
+            (r"\b(rg kar|r\.g\. kar)\b", "Kolkata", "West Bengal"),
+            (r"\b(abvp|jnu|delhi university|du)\b", "New Delhi", "Delhi"),
+        ]
+        for pat, pl, st in court_patterns:
+            if re.search(pat, text_lower):
+                found_place = pl
+                found_state = st
                 break
 
     # Extract clean title (remove publisher suffix like ' - Times of India')

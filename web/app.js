@@ -338,6 +338,12 @@ function applyFilters() {
         cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     } else if (timeVal === '30d') {
         cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    } else if (timeVal === '60d') {
+        cutoffDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+    } else if (timeVal === '90d') {
+        cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    } else if (timeVal === '180d') {
+        cutoffDate = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
     }
 
     filteredIncidents = allIncidents.filter(inc => {
