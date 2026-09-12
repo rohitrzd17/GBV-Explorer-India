@@ -58,9 +58,7 @@ def export_static_data():
         s = os.path.join(WEB_DIR, item)
         d = os.path.join(DOCS_DIR, item)
         if os.path.isdir(s):
-            if os.path.exists(d):
-                shutil.rmtree(d)
-            shutil.copytree(s, d)
+            shutil.copytree(s, d, dirs_exist_ok=True)
         else:
             shutil.copy2(s, d)
 

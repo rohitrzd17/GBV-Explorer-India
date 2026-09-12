@@ -244,7 +244,8 @@ async function fetchIncidents() {
             // Static mode fallback for GitHub Pages
             isStaticMode = true;
             console.log('[DualMode] Serving from static dataset for GitHub Pages.');
-            res = await fetch('./data/incidents.json');
+            const cacheBuster = `?t=${Date.now()}`;
+            res = await fetch(`./data/incidents.json${cacheBuster}`, { cache: 'no-store' });
         }
 
         const data = await res.json();
@@ -254,7 +255,7 @@ async function fetchIncidents() {
         }
         populateStateFilter(allIncidents);
         applyFilters();
-        fetchStats();
+        await fetchStats();
     } catch (err) {
         console.error('Failed to load incidents:', err);
     }
@@ -268,12 +269,15 @@ async function fetchStats() {
             res = await fetch('/api/stats');
             if (!res.ok) throw new Error('Stats API unavailable');
         } catch (apiErr) {
-            res = await fetch('./data/stats.json');
+            const cacheBuster = `?t=${Date.now()}`;
+            res = await fetch(`./data/stats.json${cacheBuster}`, { cache: 'no-store' });
         }
 
         const stats = await res.json();
         const total = stats.total_incidents || allIncidents.length;
-        const geocoded = stats.geocoded_incidents || 0;
+        const geocoded = (stats.geocoded_incidents !== undefined && stats.geocoded_incidents !== null)
+            ? stats.geocoded_incidents
+            : allIncidents.filter(i => i.latitude && i.longitude).length;
         let topCat = '-';
         if (stats.categories && Object.keys(stats.categories).length > 0) {
             topCat = Object.keys(stats.categories)[0];
@@ -343,7 +347,7 @@ function applyFilters() {
     } else if (timeVal === '90d') {
         cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
     } else if (timeVal === '180d') {
-        cutoffDate = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+        cutoffDate = new Date(now.getTime() - 195 * 24 * 60 * 60 * 1000); // Full 6-month coverage back to March 1, 2026
     }
 
     filteredIncidents = allIncidents.filter(inc => {
@@ -749,7 +753,8 @@ async function loadAdminFeeds() {
             const data = await res.json();
             feeds = data.feeds || [];
         } else {
-            const res = await fetch('./data/feeds.json');
+            const cacheBuster = `?t=${Date.now()}`;
+            const res = await fetch(`./data/feeds.json${cacheBuster}`, { cache: 'no-store' });
             const data = await res.json();
             feeds = data.feeds || [];
         }
@@ -919,7 +924,7 @@ function setupEvents() {
     document.getElementById('reset-filters-btn').addEventListener('click', () => {
         document.getElementById('filter-category').value = 'All';
         document.getElementById('filter-state').value = 'All';
-        document.getElementById('filter-date').value = '30d';
+        document.getElementById('filter-date').value = '180d';
         document.getElementById('filter-search').value = '';
         applyFilters();
     });

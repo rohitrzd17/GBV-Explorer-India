@@ -135,6 +135,12 @@ def init_db():
                 VALUES (?, ?, ?, ?, ?, ?, 1)
             """, (name, query, region, category_hint, feed_type, constraints))
 
+    # Performance indexes
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_sources_incident_id ON sources(incident_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_incidents_date ON incidents(incident_date)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_incidents_category ON incidents(category)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_incidents_state ON incidents(state)")
+
     conn.commit()
     conn.close()
 
