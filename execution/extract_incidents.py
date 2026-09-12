@@ -24,12 +24,14 @@ from execution.geocode_locations import geocode_location, load_gazetteer
 
 # Regex patterns for Category Classification
 CATEGORY_PATTERNS = [
-    (r"\b(pocso|minor girl|child abuse|underage|schoolgirl)\b", "POCSO / Minor"),
+    (r"\b(pocso|protection of children from sexual offences|minor girl|child abuse|underage girl|schoolgirl)\b", "POCSO / Minor"),
     (r"\b(acid attack|threw acid|vitriolage)\b", "Acid Attack"),
-    (r"\b(dowry|dowry death|harassed for dowry|demanding dowry)\b", "Dowry Violence"),
-    (r"\b(domestic violence|husband beat|in-laws tortured|marital rape|intimate partner)\b", "Domestic Violence"),
-    (r"\b(gang rape|gangraped|rape|raped|sexual assault|sexually assaulted)\b", "Sexual Assault"),
-    (r"\b(molest|molestation|eve teasing|stalking|harass|inappropriate touch|lewd)\b", "Harassment & Stalking"),
+    (r"\b(dowry|dowry death|harassed for dowry|demanding dowry|bride burning)\b", "Dowry Violence"),
+    (r"\b(domestic violence|husband beat|in-laws tortured|marital rape|intimate partner|498a|bns 85)\b", "Domestic Violence"),
+    (r"\b(gang rape|gangraped|rape|raped|sexual assault|sexually assaulted|rapist)\b", "Sexual Assault"),
+    (r"\b(molest|molestation|eve teasing|stalking|stalked|harass|inappropriate touch|lewd|voyeurism)\b", "Harassment & Stalking"),
+    (r"\b(child marriage|forced marriage|trafficking of girls|women trafficking|flesh trade)\b", "Child Marriage & Trafficking"),
+    (r"\b(honou?r killing|female fo?eticide|female infanticide)\b", "Other GBV"),
 ]
 
 LEGAL_STATUS_PATTERNS = [
@@ -57,16 +59,25 @@ STATE_ABBREVIATIONS = [
     (r"\bH\.P\.\b", "Himachal Pradesh"),
 ]
 
-def rule_based_extract(headline: str, snippet: str, published_at: str) -> Dict[str, Any]:
+def rule_based_extract(headline: str, snippet: str, published_at: str) -> Optional[Dict[str, Any]]:
     text = f"{headline}. {snippet}"
     text_lower = text.lower()
 
     # 1. Determine category
-    category = "Other GBV"
+    category = None
     for pattern, cat_name in CATEGORY_PATTERNS:
         if re.search(pattern, text_lower):
             category = cat_name
             break
+
+    # If no category pattern matched, verify against GBV constraints
+    if not category:
+        from execution.fetch_news import passes_gbv_constraints
+        if passes_gbv_constraints(headline, snippet):
+            category = "Other GBV"
+        else:
+            # Strictly reject non-GBV reports
+            return None
 
     # 2. Determine legal status
     legal_status = "Under Investigation"
@@ -254,6 +265,11 @@ def process_unprocessed_articles(batch_size: int = 50) -> int:
         extracted = gemini_extract(headline, snippet, published_at)
         if not extracted:
             extracted = rule_based_extract(headline, snippet, published_at)
+
+        if not extracted:
+            print(f"[Gatekeeper] Discarded non-GBV article: {headline[:60]}...")
+            mark_source_processed(article["id"], incident_id=None)
+            continue
 
         # Geocode the location
         geo = geocode_location(extracted.get("location_name") or extracted.get("district"), extracted.get("state"))

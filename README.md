@@ -31,7 +31,9 @@ A spatial intelligence and open-source monitoring web tool that tracks, extracts
   - Includes **UTF-8 Byte Order Mark (`\uFEFF`)** and quote formatting for seamless opening in Excel, Google Sheets, or LibreOffice.
   - Also available via programmatic endpoint: `GET /api/incidents/export/csv`.
 
-- 🛡️ **India Relevance Gatekeeper & Deduplication**:
+- 🛡️ **Strict GBV Constraint Filter & India Relevance Gatekeeper**:
+  - **Feed-Level GBV Constraints**: Every configured feed (including The Hindu, Times of India, NDTV, News18, Deccan Chronicle, etc.) is constrained with positive GBV pattern detection. General news (politics, elections, BRICS, economy, sports) is automatically filtered out before entering the database.
+  - **Deterministic Categorization**: Only reports matching verified GBV markers (Sexual Assault, POCSO / Minor, Domestic Violence, Dowry Violence, Acid Attack, Harassment/Stalking, Child Marriage & Trafficking) are registered.
   - Pre-indexed India Gazetteer ([`data/india_gazetteer.json`](data/india_gazetteer.json)) containing 329+ Indian cities and districts.
   - Distinguishes **incident location** from **media bureau/courtroom dateline**.
   - Strict negative filters discard foreign crime stories (e.g. US/UK court trials).
@@ -41,7 +43,7 @@ A spatial intelligence and open-source monitoring web tool that tracks, extracts
   - Password-protected with client- and server-side **SHA-256 cryptographic hashing** (zero plaintext passphrases in source code).
   - **Incidents Manager**: Edit titles, categories, dates, legal status, and coordinates with automatic re-geocoding.
   - **Add Incident Form**: Manually submit verified incidents to plot instantly on the map.
-  - **RSS Feeds Manager**: Add custom regional queries or toggles for state-level news feeds.
+  - **RSS Feeds Manager**: Manage 22+ active feeds (The Hindu, TOI, NDTV, Deccan Chronicle, regional feeds) with live GBV constraint badges, feed type selection, and 1-click on-demand fetching.
   - **Sources & Purge**: Inspect raw news articles and perform 1-click database sanitation.
 
 - 🌐 **Dual-Mode Hosting (Local + GitHub Pages)**:

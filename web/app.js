@@ -550,7 +550,7 @@ async function deleteIncident(id) {
 // Load Feeds in Admin Table
 async function loadAdminFeeds() {
     const tbody = document.getElementById('admin-feeds-tbody');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Loading feeds...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Loading feeds...</td></tr>';
     try {
         let feeds = [];
         if (!isStaticMode) {
@@ -566,9 +566,24 @@ async function loadAdminFeeds() {
 
         feeds.forEach(f => {
             const tr = document.createElement('tr');
+            const typeBadge = (f.feed_type === 'rss_url' || (f.query && f.query.startsWith('http')))
+                ? '<span class="badge" style="background:#0ea5e9; color:#fff; font-size:0.65rem; padding:2px 5px; border-radius:3px;">RSS XML</span>'
+                : '<span class="badge" style="background:#8b5cf6; color:#fff; font-size:0.65rem; padding:2px 5px; border-radius:3px;">Google News</span>';
+
+            const constraintBadge = (f.constraints === 'gbv_strict')
+                ? '<span class="badge" style="background:#10b981; color:#fff; font-size:0.65rem; padding:2px 5px; border-radius:3px;" title="Strict multi-category GBV filtering active"><i class="fa-solid fa-shield-halved"></i> Strict GBV</span>'
+                : `<span class="badge" style="background:#f59e0b; color:#fff; font-size:0.65rem; padding:2px 5px; border-radius:3px;" title="${escapeHtml(f.constraints)}">${escapeHtml(f.constraints || 'Custom')}</span>`;
+
             tr.innerHTML = `
-                <td><strong>${escapeHtml(f.name)}</strong></td>
+                <td>
+                    <div style="font-weight:600; font-size:0.85rem;">${escapeHtml(f.name)}</div>
+                    <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                        ${typeBadge}
+                        <span style="font-size:0.7rem; color:var(--text-muted); max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(f.query)}">${escapeHtml(f.query)}</span>
+                    </div>
+                </td>
                 <td>${escapeHtml(f.region || 'India')}</td>
+                <td>${constraintBadge}</td>
                 <td>
                     <label class="toggle-switch">
                         <input type="checkbox" ${f.is_active ? 'checked' : ''} onchange="toggleFeedActive(${f.id}, this.checked)">
@@ -584,7 +599,7 @@ async function loadAdminFeeds() {
             tbody.appendChild(tr);
         });
     } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="5" style="color: #ef4444; text-align:center;">Failed to load feeds.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="color: #ef4444; text-align:center;">Failed to load feeds.</td></tr>';
     }
 }
 
@@ -844,9 +859,11 @@ function setupEvents() {
         e.preventDefault();
         const payload = {
             name: document.getElementById('feed-name').value,
+            feed_type: document.getElementById('feed-type') ? document.getElementById('feed-type').value : 'rss_url',
             query: document.getElementById('feed-query').value,
             region: document.getElementById('feed-region').value || 'India',
-            category_hint: document.getElementById('feed-cat-hint').value
+            category_hint: document.getElementById('feed-cat-hint').value,
+            constraints: document.getElementById('feed-constraints') ? document.getElementById('feed-constraints').value : 'gbv_strict'
         };
 
         try {
@@ -858,6 +875,9 @@ function setupEvents() {
             if (res.ok) {
                 alert('Feed added successfully!');
                 document.getElementById('add-feed-form').reset();
+                if (document.getElementById('feed-constraints')) {
+                    document.getElementById('feed-constraints').value = 'gbv_strict';
+                }
                 loadAdminFeeds();
             } else {
                 alert('Failed to add feed.');

@@ -76,28 +76,64 @@ def init_db():
             query TEXT NOT NULL,
             region TEXT DEFAULT 'India',
             category_hint TEXT DEFAULT 'All',
+            feed_type TEXT DEFAULT 'google_news',
+            constraints TEXT DEFAULT 'gbv_strict',
             is_active BOOLEAN DEFAULT 1,
             last_fetched_at TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
-    # Seed default feeds if table is empty
+    # Schema migration for feeds table if columns are missing
+    cursor.execute("PRAGMA table_info(feeds)")
+    feed_cols = [row[1] for row in cursor.fetchall()]
+    if "feed_type" not in feed_cols:
+        cursor.execute("ALTER TABLE feeds ADD COLUMN feed_type TEXT DEFAULT 'google_news'")
+    if "constraints" not in feed_cols:
+        cursor.execute("ALTER TABLE feeds ADD COLUMN constraints TEXT DEFAULT 'gbv_strict'")
+
+    # Seed default Google News monitors if table is empty
     cursor.execute("SELECT COUNT(*) FROM feeds")
     if cursor.fetchone()[0] == 0:
         default_feeds = [
-            ("National GBV Monitor", '("rape" OR "sexual assault" OR "domestic violence" OR "POCSO") (India OR Indian OR Delhi OR Mumbai)', "India", "All"),
-            ("Delhi NCR Crime", '("rape" OR "molestation" OR "harassment" OR "eve teasing") (Delhi OR Noida OR Gurugram OR Ghaziabad)', "Delhi NCR", "Harassment & Stalking"),
-            ("Uttar Pradesh Crime", '("rape" OR "gang rape" OR "dowry death" OR "domestic violence") (UP OR "Uttar Pradesh" OR Lucknow OR Kanpur OR Agra)', "Uttar Pradesh", "Sexual Assault"),
-            ("Maharashtra Crime", '("sexual assault" OR "molestation" OR "rape") (Maharashtra OR Mumbai OR Pune OR Thane OR Nagpur)', "Maharashtra", "Sexual Assault"),
-            ("West Bengal Crime", '("rape" OR "sexual assault" OR "harassment") ("West Bengal" OR Kolkata OR Howrah OR Sandeshkhali)', "West Bengal", "Sexual Assault"),
-            ("South India GBV Monitor", '("rape" OR "sexual assault" OR "domestic violence") (Bengaluru OR Chennai OR Hyderabad OR Kerala OR "Tamil Nadu")', "South India", "All"),
-            ("POCSO & Child Safety", '("POCSO" OR "minor girl" OR "schoolgirl" OR "child abuse") (India OR police OR FIR)', "India", "POCSO / Minor")
+            ("National GBV Monitor", '("rape" OR "sexual assault" OR "domestic violence" OR "POCSO") (India OR Indian OR Delhi OR Mumbai)', "India", "All", "google_news", "gbv_strict"),
+            ("Delhi NCR Crime", '("rape" OR "molestation" OR "harassment" OR "eve teasing") (Delhi OR Noida OR Gurugram OR Ghaziabad)', "Delhi NCR", "Harassment & Stalking", "google_news", "gbv_strict"),
+            ("Uttar Pradesh Crime", '("rape" OR "gang rape" OR "dowry death" OR "domestic violence") (UP OR "Uttar Pradesh" OR Lucknow OR Kanpur OR Agra)', "Uttar Pradesh", "Sexual Assault", "google_news", "gbv_strict"),
+            ("Maharashtra Crime", '("sexual assault" OR "molestation" OR "rape") (Maharashtra OR Mumbai OR Pune OR Thane OR Nagpur)', "Maharashtra", "Sexual Assault", "google_news", "gbv_strict"),
+            ("West Bengal Crime", '("rape" OR "sexual assault" OR "harassment") ("West Bengal" OR Kolkata OR Howrah OR Sandeshkhali)', "West Bengal", "Sexual Assault", "google_news", "gbv_strict"),
+            ("South India GBV Monitor", '("rape" OR "sexual assault" OR "domestic violence") (Bengaluru OR Chennai OR Hyderabad OR Kerala OR "Tamil Nadu")', "South India", "All", "google_news", "gbv_strict"),
+            ("POCSO & Child Safety", '("POCSO" OR "minor girl" OR "schoolgirl" OR "child abuse") (India OR police OR FIR)', "India", "POCSO / Minor", "google_news", "gbv_strict")
         ]
         cursor.executemany("""
-            INSERT INTO feeds (name, query, region, category_hint, is_active)
-            VALUES (?, ?, ?, ?, 1)
+            INSERT INTO feeds (name, query, region, category_hint, feed_type, constraints, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, 1)
         """, default_feeds)
+
+    # Seed national RSS feeds (The Hindu, TOI) and curated RSS Catalog feeds if not yet registered
+    rss_catalog_feeds = [
+        ("The Hindu (National)", "https://www.thehindu.com/news/national/feeder/default.rss", "India", "All", "rss_url", "gbv_strict"),
+        ("Times of India (National)", "https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms", "India", "All", "rss_url", "gbv_strict"),
+        ("NDTV National News", "https://feeds.feedburner.com/NDTV-LatestNews", "India", "All", "rss_url", "gbv_strict"),
+        ("News18 India", "https://www.news18.com/rss/india.xml", "India", "All", "rss_url", "gbv_strict"),
+        ("DNA India", "https://www.dnaindia.com/feeds/india.xml", "India", "All", "rss_url", "gbv_strict"),
+        ("Deccan Chronicle", "https://www.deccanchronicle.com/rss_feed/", "South India", "All", "rss_url", "gbv_strict"),
+        ("India Today", "https://www.indiatoday.in/rss/1206578", "India", "All", "rss_url", "gbv_strict"),
+        ("Scroll.in", "https://feeds.feedburner.com/ScrollinArticles.rss", "India", "All", "rss_url", "gbv_strict"),
+        ("Orissa Post", "https://www.orissapost.com/feed/", "Odisha", "All", "rss_url", "gbv_strict"),
+        ("Telangana Today", "https://telanganatoday.com/feed", "Telangana", "All", "rss_url", "gbv_strict"),
+        ("The Arunachal Times", "https://arunachaltimes.in/index.php/feed/", "North East", "All", "rss_url", "gbv_strict"),
+        ("Star of Mysore", "https://starofmysore.com/feed/", "Karnataka", "All", "rss_url", "gbv_strict"),
+        ("The News Himachal", "https://thenewshimachal.com/feed/", "Himachal Pradesh", "All", "rss_url", "gbv_strict"),
+        ("Chandigarh City News", "https://feeds.feedburner.com/ChandigarhCityNews", "Punjab & Haryana", "All", "rss_url", "gbv_strict"),
+        ("#KhabarLive Hyderabad", "https://hydnews.net/feed/", "Telangana", "All", "rss_url", "gbv_strict"),
+    ]
+    for name, query, region, category_hint, feed_type, constraints in rss_catalog_feeds:
+        cursor.execute("SELECT id FROM feeds WHERE query = ? OR name = ?", (query, name))
+        if not cursor.fetchone():
+            cursor.execute("""
+                INSERT INTO feeds (name, query, region, category_hint, feed_type, constraints, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, 1)
+            """, (name, query, region, category_hint, feed_type, constraints))
 
     conn.commit()
     conn.close()
@@ -345,16 +381,34 @@ def get_all_feeds() -> List[Dict[str, Any]]:
     finally:
         conn.close()
 
-def create_feed(name: str, query: str, region: str = "India", category_hint: str = "All") -> int:
+def create_feed(name: str, query: str, region: str = "India", category_hint: str = "All", feed_type: Optional[str] = None, constraints: str = "gbv_strict") -> int:
+    if not feed_type:
+        feed_type = "rss_url" if (query.startswith("http://") or query.startswith("https://")) else "google_news"
     conn = get_connection()
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            INSERT INTO feeds (name, query, region, category_hint, is_active)
-            VALUES (?, ?, ?, ?, 1)
-        """, (name, query, region, category_hint))
+            INSERT INTO feeds (name, query, region, category_hint, feed_type, constraints, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, 1)
+        """, (name, query, region, category_hint, feed_type, constraints or "gbv_strict"))
         conn.commit()
         return cursor.lastrowid
+    finally:
+        conn.close()
+
+def update_feed(feed_id: int, name: str, query: str, region: str = "India", category_hint: str = "All", feed_type: Optional[str] = None, constraints: str = "gbv_strict") -> bool:
+    if not feed_type:
+        feed_type = "rss_url" if (query.startswith("http://") or query.startswith("https://")) else "google_news"
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            UPDATE feeds 
+            SET name = ?, query = ?, region = ?, category_hint = ?, feed_type = ?, constraints = ?
+            WHERE id = ?
+        """, (name, query, region, category_hint, feed_type, constraints or "gbv_strict", feed_id))
+        conn.commit()
+        return cursor.rowcount > 0
     finally:
         conn.close()
 

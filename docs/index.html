@@ -327,20 +327,27 @@
                 <div id="tab-feeds" class="admin-tab-pane">
                     <div class="admin-split-view">
                         <div class="feed-form-box">
-                            <h4><i class="fa-solid fa-plus-circle"></i> Add Custom Feed</h4>
+                            <h4><i class="fa-solid fa-plus-circle"></i> Add News / RSS Feed</h4>
                             <form id="add-feed-form">
                                 <div class="form-group">
-                                    <label>Feed / Region Name *</label>
-                                    <input type="text" id="feed-name" required placeholder="e.g. Rajasthan GBV News">
+                                    <label>Feed Name *</label>
+                                    <input type="text" id="feed-name" required placeholder="e.g. The Hindu National">
                                 </div>
                                 <div class="form-group">
-                                    <label>Search Query *</label>
-                                    <input type="text" id="feed-query" required placeholder="e.g. (rape OR assault) (Jaipur OR Rajasthan)">
+                                    <label>Feed Type *</label>
+                                    <select id="feed-type">
+                                        <option value="rss_url" selected>Direct RSS XML Feed URL</option>
+                                        <option value="google_news">Google News Keyword Query</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label id="feed-query-label">RSS Feed URL or Search Query *</label>
+                                    <input type="text" id="feed-query" required placeholder="https://example.com/rss.xml">
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group flex-1">
                                         <label>Region</label>
-                                        <input type="text" id="feed-region" placeholder="e.g. Rajasthan">
+                                        <input type="text" id="feed-region" placeholder="e.g. India / State">
                                     </div>
                                     <div class="form-group flex-1">
                                         <label>Category Hint</label>
@@ -352,19 +359,27 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div class="form-group">
+                                    <label>GBV Constraint Filter</label>
+                                    <input type="text" id="feed-constraints" value="gbv_strict" placeholder="gbv_strict">
+                                    <small style="color:var(--text-muted); font-size:0.75rem; display:block; margin-top:3px;">
+                                        <i class="fa-solid fa-shield-halved"></i> <strong>gbv_strict</strong> requires positive GBV markers (rape, POCSO, dowry, domestic violence, acid attack). General news is rejected.
+                                    </small>
+                                </div>
                                 <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-plus"></i> Add Feed</button>
                             </form>
                         </div>
 
                         <div class="feed-table-box">
-                            <h4><i class="fa-solid fa-tower-broadcast"></i> Active News Feeds</h4>
+                            <h4><i class="fa-solid fa-tower-broadcast"></i> Configured News Feeds</h4>
                             <div class="admin-table-wrapper">
                                 <table class="admin-table">
                                     <thead>
                                         <tr>
-                                            <th>Name</th>
+                                            <th>Feed & Source</th>
                                             <th>Region</th>
-                                            <th>Status</th>
+                                            <th>GBV Constraints</th>
+                                            <th>Active</th>
                                             <th>Last Fetch</th>
                                             <th>Actions</th>
                                         </tr>

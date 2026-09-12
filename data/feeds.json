@@ -1,5 +1,5 @@
 {
-  "count": 7,
+  "count": 22,
   "feeds": [
     {
       "id": 1,
@@ -9,7 +9,9 @@
       "category_hint": "All",
       "is_active": 1,
       "last_fetched_at": null,
-      "created_at": "2026-09-12 10:34:55"
+      "created_at": "2026-09-12 10:34:55",
+      "feed_type": "google_news",
+      "constraints": "gbv_strict"
     },
     {
       "id": 2,
@@ -19,7 +21,9 @@
       "category_hint": "Harassment & Stalking",
       "is_active": 1,
       "last_fetched_at": null,
-      "created_at": "2026-09-12 10:34:55"
+      "created_at": "2026-09-12 10:34:55",
+      "feed_type": "google_news",
+      "constraints": "gbv_strict"
     },
     {
       "id": 3,
@@ -29,7 +33,9 @@
       "category_hint": "Sexual Assault",
       "is_active": 1,
       "last_fetched_at": null,
-      "created_at": "2026-09-12 10:34:55"
+      "created_at": "2026-09-12 10:34:55",
+      "feed_type": "google_news",
+      "constraints": "gbv_strict"
     },
     {
       "id": 4,
@@ -39,7 +45,9 @@
       "category_hint": "Sexual Assault",
       "is_active": 1,
       "last_fetched_at": null,
-      "created_at": "2026-09-12 10:34:55"
+      "created_at": "2026-09-12 10:34:55",
+      "feed_type": "google_news",
+      "constraints": "gbv_strict"
     },
     {
       "id": 5,
@@ -49,7 +57,9 @@
       "category_hint": "Sexual Assault",
       "is_active": 1,
       "last_fetched_at": null,
-      "created_at": "2026-09-12 10:34:55"
+      "created_at": "2026-09-12 10:34:55",
+      "feed_type": "google_news",
+      "constraints": "gbv_strict"
     },
     {
       "id": 6,
@@ -59,7 +69,9 @@
       "category_hint": "All",
       "is_active": 1,
       "last_fetched_at": null,
-      "created_at": "2026-09-12 10:34:55"
+      "created_at": "2026-09-12 10:34:55",
+      "feed_type": "google_news",
+      "constraints": "gbv_strict"
     },
     {
       "id": 7,
@@ -69,7 +81,189 @@
       "category_hint": "POCSO / Minor",
       "is_active": 1,
       "last_fetched_at": null,
-      "created_at": "2026-09-12 10:34:55"
+      "created_at": "2026-09-12 10:34:55",
+      "feed_type": "google_news",
+      "constraints": "gbv_strict"
+    },
+    {
+      "id": 9,
+      "name": "The Hindu (National)",
+      "query": "https://www.thehindu.com/news/national/feeder/default.rss",
+      "region": "India",
+      "category_hint": "All",
+      "is_active": 1,
+      "last_fetched_at": "2026-09-12 11:23:58",
+      "created_at": "2026-09-12 11:22:02",
+      "feed_type": "rss_url",
+      "constraints": "gbv_strict"
+    },
+    {
+      "id": 10,
+      "name": "Times of India (National)",
+      "query": "https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms",
+      "region": "India",
+      "category_hint": "All",
+      "is_active": 1,
+      "last_fetched_at": "2026-09-12 11:23:58",
+      "created_at": "2026-09-12 11:22:02",
+      "feed_type": "rss_url",
+      "constraints": "gbv_strict"
+    },
+    {
+      "id": 11,
+      "name": "NDTV National News",
+      "query": "https://feeds.feedburner.com/NDTV-LatestNews",
+      "region": "India",
+      "category_hint": "All",
+      "is_active": 1,
+      "last_fetched_at": null,
+      "created_at": "2026-09-12 11:22:02",
+      "feed_type": "rss_url",
+      "constraints": "gbv_strict"
+    },
+    {
+      "id": 12,
+      "name": "News18 India",
+      "query": "https://www.news18.com/rss/india.xml",
+      "region": "India",
+      "category_hint": "All",
+      "is_active": 1,
+      "last_fetched_at": null,
+      "created_at": "2026-09-12 11:22:02",
+      "feed_type": "rss_url",
+      "constraints": "gbv_strict"
+    },
+    {
+      "id": 13,
+      "name": "DNA India",
+      "query": "https://www.dnaindia.com/feeds/india.xml",
+      "region": "India",
+      "category_hint": "All",
+      "is_active": 1,
+      "last_fetched_at": null,
+      "created_at": "2026-09-12 11:22:02",
+      "feed_type": "rss_url",
+      "constraints": "gbv_strict"
+    },
+    {
+      "id": 14,
+      "name": "Deccan Chronicle",
+      "query": "https://www.deccanchronicle.com/rss_feed/",
+      "region": "South India",
+      "category_hint": "All",
+      "is_active": 1,
+      "last_fetched_at": null,
+      "created_at": "2026-09-12 11:22:02",
+      "feed_type": "rss_url",
+      "constraints": "gbv_strict"
+    },
+    {
+      "id": 15,
+      "name": "India Today",
+      "query": "https://www.indiatoday.in/rss/1206578",
+      "region": "India",
+      "category_hint": "All",
+      "is_active": 1,
+      "last_fetched_at": null,
+      "created_at": "2026-09-12 11:22:02",
+      "feed_type": "rss_url",
+      "constraints": "gbv_strict"
+    },
+    {
+      "id": 16,
+      "name": "Scroll.in",
+      "query": "https://feeds.feedburner.com/ScrollinArticles.rss",
+      "region": "India",
+      "category_hint": "All",
+      "is_active": 1,
+      "last_fetched_at": null,
+      "created_at": "2026-09-12 11:22:02",
+      "feed_type": "rss_url",
+      "constraints": "gbv_strict"
+    },
+    {
+      "id": 17,
+      "name": "Orissa Post",
+      "query": "https://www.orissapost.com/feed/",
+      "region": "Odisha",
+      "category_hint": "All",
+      "is_active": 1,
+      "last_fetched_at": null,
+      "created_at": "2026-09-12 11:22:02",
+      "feed_type": "rss_url",
+      "constraints": "gbv_strict"
+    },
+    {
+      "id": 18,
+      "name": "Telangana Today",
+      "query": "https://telanganatoday.com/feed",
+      "region": "Telangana",
+      "category_hint": "All",
+      "is_active": 1,
+      "last_fetched_at": null,
+      "created_at": "2026-09-12 11:22:02",
+      "feed_type": "rss_url",
+      "constraints": "gbv_strict"
+    },
+    {
+      "id": 19,
+      "name": "The Arunachal Times",
+      "query": "https://arunachaltimes.in/index.php/feed/",
+      "region": "North East",
+      "category_hint": "All",
+      "is_active": 1,
+      "last_fetched_at": null,
+      "created_at": "2026-09-12 11:22:02",
+      "feed_type": "rss_url",
+      "constraints": "gbv_strict"
+    },
+    {
+      "id": 20,
+      "name": "Star of Mysore",
+      "query": "https://starofmysore.com/feed/",
+      "region": "Karnataka",
+      "category_hint": "All",
+      "is_active": 1,
+      "last_fetched_at": null,
+      "created_at": "2026-09-12 11:22:02",
+      "feed_type": "rss_url",
+      "constraints": "gbv_strict"
+    },
+    {
+      "id": 21,
+      "name": "The News Himachal",
+      "query": "https://thenewshimachal.com/feed/",
+      "region": "Himachal Pradesh",
+      "category_hint": "All",
+      "is_active": 1,
+      "last_fetched_at": null,
+      "created_at": "2026-09-12 11:22:02",
+      "feed_type": "rss_url",
+      "constraints": "gbv_strict"
+    },
+    {
+      "id": 22,
+      "name": "Chandigarh City News",
+      "query": "https://feeds.feedburner.com/ChandigarhCityNews",
+      "region": "Punjab & Haryana",
+      "category_hint": "All",
+      "is_active": 1,
+      "last_fetched_at": null,
+      "created_at": "2026-09-12 11:22:02",
+      "feed_type": "rss_url",
+      "constraints": "gbv_strict"
+    },
+    {
+      "id": 23,
+      "name": "#KhabarLive Hyderabad",
+      "query": "https://hydnews.net/feed/",
+      "region": "Telangana",
+      "category_hint": "All",
+      "is_active": 1,
+      "last_fetched_at": null,
+      "created_at": "2026-09-12 11:22:02",
+      "feed_type": "rss_url",
+      "constraints": "gbv_strict"
     }
   ]
 }

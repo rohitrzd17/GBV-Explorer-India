@@ -31,6 +31,7 @@ from execution.database import (
     delete_source,
     get_all_feeds,
     create_feed,
+    update_feed,
     toggle_feed,
     delete_feed,
     purge_non_india_records
@@ -193,6 +194,16 @@ class FeedCreatePayload(BaseModel):
     query: str
     region: str = "India"
     category_hint: str = "All"
+    feed_type: Optional[str] = None
+    constraints: Optional[str] = "gbv_strict"
+
+class FeedUpdatePayload(BaseModel):
+    name: str
+    query: str
+    region: str = "India"
+    category_hint: str = "All"
+    feed_type: Optional[str] = None
+    constraints: Optional[str] = "gbv_strict"
 
 @app.get("/api/admin/incidents")
 def admin_get_incidents(
@@ -292,9 +303,26 @@ def admin_create_feed(payload: FeedCreatePayload):
         name=payload.name,
         query=payload.query,
         region=payload.region,
-        category_hint=payload.category_hint
+        category_hint=payload.category_hint,
+        feed_type=payload.feed_type,
+        constraints=payload.constraints or "gbv_strict"
     )
     return {"id": feed_id, "message": "Feed created successfully"}
+
+@app.put("/api/admin/feeds/{feed_id}")
+def admin_update_feed(feed_id: int, payload: FeedUpdatePayload):
+    success = update_feed(
+        feed_id=feed_id,
+        name=payload.name,
+        query=payload.query,
+        region=payload.region,
+        category_hint=payload.category_hint,
+        feed_type=payload.feed_type,
+        constraints=payload.constraints or "gbv_strict"
+    )
+    if not success:
+        raise HTTPException(status_code=404, detail="Feed not found")
+    return {"success": True, "message": "Feed updated successfully"}
 
 @app.put("/api/admin/feeds/{feed_id}/toggle")
 def admin_toggle_feed(feed_id: int, is_active: bool = Body(..., embed=True)):
