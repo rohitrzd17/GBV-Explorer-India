@@ -226,33 +226,31 @@ body {
     justify-content: center;
 }
 
-/* Main Container */
+/* Main Container: fills remaining viewport height */
 .main-container {
     flex: 1;
     position: relative;
-    display: flex;
+    width: 100%;
+    height: calc(100vh - 64px);
     overflow: hidden;
 }
 
-/* Filter Bar Floating */
-.filter-bar {
+/* Map Container: fills 100% of main container */
+#map-container {
     position: absolute;
-    top: 16px;
-    left: 16px;
-    z-index: 900;
-    background: rgba(30, 41, 59, 0.92);
-    backdrop-filter: blur(8px);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 8px 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-    flex-wrap: wrap;
-    max-width: calc(100% - 32px);
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
 }
 
+#map {
+    width: 100%;
+    height: 100%;
+    background-color: #0c1220;
+}
+
+/* Base Filter Group styles */
 .filter-group {
     display: flex;
     align-items: center;
@@ -293,19 +291,6 @@ body {
 .search-group input {
     padding-left: 26px;
     width: 190px;
-}
-
-/* Map Container */
-#map-container {
-    flex: 1;
-    height: 100%;
-    position: relative;
-}
-
-#map {
-    width: 100%;
-    height: 100%;
-    background-color: #0c1220;
 }
 
 /* Map Legend */
@@ -1036,7 +1021,98 @@ input:checked + .slider:before {
 }
 
 /* ========================================================= */
-/* MOBILE VIEWPORT OPTIMIZATIONS (Inspired by Zoom Earth)     */
+/* DESKTOP VIEWPORT SPECIFICATIONS (Min-Width: 821px)        */
+/* ========================================================= */
+@media (min-width: 821px) {
+    /* Hide mobile-only controls */
+    .mobile-header-controls,
+    .mobile-menu-sheet,
+    .zoom-floating-controls {
+        display: none !important;
+    }
+
+    /* Floating horizontal filter bar over the map */
+    .filter-bar {
+        position: absolute !important;
+        top: 16px !important;
+        left: 16px !important;
+        z-index: 1000 !important;
+        display: block !important;
+        width: auto !important;
+        max-width: calc(100% - 420px) !important;
+        pointer-events: auto !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+    }
+
+    .filter-bar-sheet {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 8px !important;
+        background: rgba(30, 41, 59, 0.94) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        padding: 6px 12px !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+    }
+
+    /* Hide mobile sheet header & mobile apply button on desktop */
+    .filter-bar-header,
+    .filter-mobile-apply {
+        display: none !important;
+    }
+
+    .filter-group {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
+
+    /* Side Drawer on PC: Sleek Overlay on Right side with NO blur */
+    .side-drawer {
+        position: absolute !important;
+        top: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 390px !important;
+        max-width: 90vw !important;
+        background-color: var(--bg-surface) !important;
+        border-left: 1px solid var(--border-color) !important;
+        box-shadow: -8px 0 30px rgba(0, 0, 0, 0.5) !important;
+        z-index: 1100 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        transform: translateX(0) !important;
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    .side-drawer.hidden {
+        transform: translateX(100%) !important;
+        display: none !important;
+        pointer-events: none !important;
+    }
+
+    #close-drawer-mobile-btn {
+        display: none !important;
+    }
+
+    #close-drawer-btn {
+        display: flex !important;
+    }
+
+    /* Absolutely no blur or backdrop on desktop */
+    .drawer-backdrop {
+        display: none !important;
+    }
+}
+
+/* ========================================================= */
+/* MOBILE VIEWPORT SPECIFICATIONS (Inspired by Zoom Earth)   */
 /* ========================================================= */
 @media (max-width: 820px) {
     body {
@@ -1078,15 +1154,15 @@ input:checked + .slider:before {
     }
 
     .tagline {
-        display: none;
+        display: none !important;
     }
 
-    /* Hide cluttered desktop elements from mobile header */
+    /* Hide desktop elements from mobile header */
     .metrics-strip, .header-actions {
         display: none !important;
     }
 
-    /* Mobile Header Controls */
+    /* Mobile Header Quick Controls */
     .mobile-header-controls {
         display: flex;
         align-items: center;
@@ -1146,7 +1222,7 @@ input:checked + .slider:before {
     }
 
     .mobile-menu-sheet.active {
-        display: flex;
+        display: flex !important;
     }
 
     .mobile-menu-header {
@@ -1213,7 +1289,7 @@ input:checked + .slider:before {
         left: 0;
         right: 0;
         padding: 0 16px;
-        display: flex;
+        display: flex !important;
         justify-content: space-between;
         align-items: center;
         pointer-events: none;
@@ -1239,7 +1315,7 @@ input:checked + .slider:before {
 
     /* Bottom Left: Filters (Frosted dark pill) */
     .zoom-filter-btn {
-        background: rgba(15, 23, 42, 0.90);
+        background: rgba(15, 23, 42, 0.92);
         backdrop-filter: blur(14px);
         color: #f8fafc;
         border: 1px solid rgba(255, 255, 255, 0.18);
@@ -1269,7 +1345,7 @@ input:checked + .slider:before {
 
     /* Legend on Mobile: small floating pill above Filters button */
     .map-legend {
-        bottom: 78px;
+        bottom: 82px;
         left: 16px;
         padding: 6px 10px;
         max-width: 175px;
@@ -1280,114 +1356,128 @@ input:checked + .slider:before {
     }
 
     .map-legend.collapsed .legend-items {
-        display: none;
+        display: none !important;
     }
 
-    /* Mobile Filter Bottom Sheet */
+    /* MOBILE FILTER BOTTOM SHEET MODAL */
+    /* By default: completely hidden (display: none !important) so it NEVER blocks floating buttons */
     .filter-bar {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 2300;
-        background: var(--bg-surface);
-        border-top: 1px solid var(--border-color);
-        border-radius: 20px 20px 0 0;
-        padding: 18px 16px;
-        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.7);
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        transform: translateY(100%);
-        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-        max-height: 85vh;
-        overflow-y: auto;
-        max-width: 100%;
+        display: none !important;
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 3000 !important;
+        background: rgba(0, 0, 0, 0.65) !important;
+        backdrop-filter: blur(4px) !important;
+        align-items: flex-end !important;
+        justify-content: center !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
     }
 
     .filter-bar.active {
-        transform: translateY(0);
+        display: flex !important;
+    }
+
+    .filter-bar-sheet {
+        width: 100% !important;
+        max-height: 82vh !important;
+        background: var(--bg-surface) !important;
+        border-top: 1px solid var(--border-color) !important;
+        border-radius: 20px 20px 0 0 !important;
+        padding: 20px 16px 30px 16px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 14px !important;
+        overflow-y: auto !important;
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.7) !important;
+        animation: sheetSlideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    @keyframes sheetSlideUp {
+        from {
+            transform: translateY(100%);
+        }
+        to {
+            transform: translateY(0);
+        }
     }
 
     .filter-bar-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.9rem;
-        font-weight: 600;
-        padding-bottom: 8px;
-        border-bottom: 1px solid var(--border-color);
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        font-size: 0.95rem !important;
+        font-weight: 600 !important;
+        padding-bottom: 10px !important;
+        border-bottom: 1px solid var(--border-color) !important;
     }
 
     .filter-mobile-apply {
-        display: block;
-        margin-top: 4px;
+        display: block !important;
+        margin-top: 6px !important;
     }
 
     .filter-group {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 4px !important;
     }
 
     .filter-group label {
-        display: block;
-        font-size: 0.72rem;
+        display: block !important;
+        font-size: 0.72rem !important;
     }
 
     .filter-group select, .filter-group input {
-        width: 100%;
-        padding: 8px 10px;
-        font-size: 0.85rem;
+        width: 100% !important;
+        padding: 8px 10px !important;
+        font-size: 0.85rem !important;
     }
 
     .search-group input {
-        padding-left: 30px;
+        padding-left: 30px !important;
     }
 
     .search-group i {
-        top: 60%;
-        left: 10px;
+        top: 60% !important;
+        left: 10px !important;
     }
 
     /* FULL-PAGE INCIDENTS LIST ON MOBILE */
     .side-drawer {
-        position: fixed;
-        inset: 0;
-        width: 100vw;
-        height: 100vh;
-        max-width: 100vw;
-        max-height: 100vh;
-        z-index: 2500;
-        background: var(--bg-main);
-        display: flex;
-        flex-direction: column;
-        transform: translateY(100%);
-        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-        border: none;
-        border-radius: 0;
-        box-shadow: none;
-    }
-
-    .side-drawer.active, .side-drawer:not(.hidden) {
-        transform: translateY(0);
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100vw !important;
+        max-height: 100vh !important;
+        z-index: 3100 !important;
+        background: var(--bg-main) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        transform: translateY(0) !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
     }
 
     .side-drawer.hidden {
-        transform: translateY(100%);
-        display: flex;
-        pointer-events: none;
+        display: none !important;
+        pointer-events: none !important;
     }
 
     .drawer-header {
-        padding: 12px 16px;
-        background: var(--bg-surface);
-        border-bottom: 1px solid var(--border-color);
+        padding: 12px 16px !important;
+        background: var(--bg-surface) !important;
+        border-bottom: 1px solid var(--border-color) !important;
     }
 
     .drawer-header h3 {
-        font-size: 1rem;
+        font-size: 1rem !important;
     }
 
     /* Hide desktop X button on mobile drawer; Back arrow is used */
@@ -1399,7 +1489,7 @@ input:checked + .slider:before {
         display: flex !important;
     }
 
-    /* Mobile Backdrop: dim background when Filter sheet or Mobile Menu is open */
+    /* Mobile Backdrop */
     .drawer-backdrop {
         display: none;
         position: fixed;

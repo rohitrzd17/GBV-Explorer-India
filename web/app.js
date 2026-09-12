@@ -1148,6 +1148,13 @@ function setupEvents() {
     if (floatingFilterBtn) floatingFilterBtn.addEventListener('click', openFiltersSheet);
     if (closeFilterSheetBtn) closeFilterSheetBtn.addEventListener('click', closeFiltersSheet);
     if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', closeFiltersSheet);
+    if (filterBar) {
+        filterBar.addEventListener('click', (e) => {
+            if (e.target === filterBar) {
+                closeFiltersSheet();
+            }
+        });
+    }
 
     // Mobile Menu Dropdown Logic
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');

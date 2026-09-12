@@ -98,62 +98,64 @@
 
     <!-- Main Content Area -->
     <div class="main-container">
-        <!-- Floating Filter Bar (Bottom sheet on mobile, top floating bar on PC) -->
-        <div class="filter-bar" id="filter-bar">
-            <div class="filter-bar-header">
-                <h4><i class="fa-solid fa-sliders"></i> Search & Filters</h4>
-                <button id="close-filter-sheet-btn" class="btn-close-sm" type="button"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <div class="filter-group search-group">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="filter-search" placeholder="Search keywords, town, district...">
-            </div>
-
-            <div class="filter-group">
-                <label for="filter-category"><i class="fa-solid fa-tags"></i> Category</label>
-                <select id="filter-category">
-                    <option value="All">All Categories</option>
-                    <option value="Sexual Assault">Sexual Assault / Rape</option>
-                    <option value="POCSO / Minor">POCSO / Minor</option>
-                    <option value="Domestic Violence">Domestic Violence</option>
-                    <option value="Dowry Violence">Dowry Violence</option>
-                    <option value="Harassment & Stalking">Harassment & Stalking</option>
-                    <option value="Acid Attack">Acid Attack</option>
-                    <option value="Other GBV">Other GBV Offenses</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="filter-state"><i class="fa-solid fa-location-dot"></i> State</label>
-                <select id="filter-state">
-                    <option value="All">All States / UTs</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="filter-date"><i class="fa-solid fa-calendar"></i> Timeframe</label>
-                <select id="filter-date">
-                    <option value="all">All Available</option>
-                    <option value="7d">Last 7 Days</option>
-                    <option value="30d" selected>Last 30 Days</option>
-                </select>
-            </div>
-
-            <div class="filter-group reset-btn-group">
-                <button id="reset-filters-btn" class="btn btn-ghost" title="Reset All Filters" type="button">
-                    <i class="fa-solid fa-xmark"></i> Clear
-                </button>
-            </div>
-
-            <div class="filter-mobile-apply">
-                <button id="apply-filters-btn" class="btn btn-primary btn-block" type="button"><i class="fa-solid fa-check"></i> View Results</button>
-            </div>
-        </div>
-
         <!-- Map View -->
         <div id="map-container">
             <div id="map"></div>
+
+            <!-- Floating Filter Bar on PC / Modal Bottom Sheet on Mobile -->
+            <div class="filter-bar" id="filter-bar">
+                <div class="filter-bar-sheet">
+                    <div class="filter-bar-header">
+                        <h4><i class="fa-solid fa-sliders"></i> Search & Filters</h4>
+                        <button id="close-filter-sheet-btn" class="btn-close-sm" type="button"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+
+                    <div class="filter-group search-group">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="filter-search" placeholder="Search keywords, town, district...">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="filter-category"><i class="fa-solid fa-tags"></i> Category</label>
+                        <select id="filter-category">
+                            <option value="All">All Categories</option>
+                            <option value="Sexual Assault">Sexual Assault / Rape</option>
+                            <option value="POCSO / Minor">POCSO / Minor</option>
+                            <option value="Domestic Violence">Domestic Violence</option>
+                            <option value="Dowry Violence">Dowry Violence</option>
+                            <option value="Harassment & Stalking">Harassment & Stalking</option>
+                            <option value="Acid Attack">Acid Attack</option>
+                            <option value="Other GBV">Other GBV Offenses</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="filter-state"><i class="fa-solid fa-location-dot"></i> State</label>
+                        <select id="filter-state">
+                            <option value="All">All States / UTs</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="filter-date"><i class="fa-solid fa-calendar"></i> Timeframe</label>
+                        <select id="filter-date">
+                            <option value="all">All Available</option>
+                            <option value="7d">Last 7 Days</option>
+                            <option value="30d" selected>Last 30 Days</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group reset-btn-group">
+                        <button id="reset-filters-btn" class="btn btn-ghost" title="Reset All Filters" type="button">
+                            <i class="fa-solid fa-xmark"></i> Clear
+                        </button>
+                    </div>
+
+                    <div class="filter-mobile-apply">
+                        <button id="apply-filters-btn" class="btn btn-primary btn-block" type="button"><i class="fa-solid fa-check"></i> View Results</button>
+                    </div>
+                </div>
+            </div>
 
             <!-- Zoom Earth Inspired Mobile Floating Controls (Filters bottom-left, Incidents bottom-right) -->
             <div class="zoom-floating-controls">
@@ -187,9 +189,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Backdrop overlay for mobile modals only (NOT on PC) -->
-        <div id="drawer-backdrop" class="drawer-backdrop"></div>
 
         <!-- Side Drawer: Incident List (Full-Page on Mobile, Overlay on PC) -->
         <aside id="side-drawer" class="side-drawer hidden">
