@@ -215,37 +215,40 @@
                 </button>
             </div>
 
-            <!-- Map Legend (Collapsible on mobile) -->
-            <div class="map-legend" id="map-legend">
-                <div class="legend-header" id="legend-header">
-                    <h4><i class="fa-solid fa-circle-info"></i> Legend</h4>
-                    <button id="toggle-legend-btn" class="legend-toggle-btn" title="Toggle Legend" type="button">
-                        <i class="fa-solid fa-chevron-up" id="legend-chevron"></i>
-                    </button>
+            <!-- Floating Map Legends Container -->
+            <div class="map-legends-container" id="map-legends-container">
+                <!-- Map Legend (Collapsible on mobile) -->
+                <div class="map-legend" id="map-legend">
+                    <div class="legend-header" id="legend-header">
+                        <h4><i class="fa-solid fa-circle-info"></i> Legend</h4>
+                        <button id="toggle-legend-btn" class="legend-toggle-btn" title="Toggle Legend" type="button">
+                            <i class="fa-solid fa-chevron-up" id="legend-chevron"></i>
+                        </button>
+                    </div>
+                    <div class="legend-items" id="legend-items">
+                        <div class="legend-item"><span class="legend-dot dot-assault"></span> Sexual Assault</div>
+                        <div class="legend-item"><span class="legend-dot dot-pocso"></span> POCSO / Minor</div>
+                        <div class="legend-item"><span class="legend-dot dot-domestic"></span> Domestic Violence</div>
+                        <div class="legend-item"><span class="legend-dot dot-dowry"></span> Dowry Violence</div>
+                        <div class="legend-item"><span class="legend-dot dot-harassment"></span> Harassment / Stalking</div>
+                        <div class="legend-item"><span class="legend-dot dot-acid"></span> Acid Attack</div>
+                    </div>
                 </div>
-                <div class="legend-items" id="legend-items">
-                    <div class="legend-item"><span class="legend-dot dot-assault"></span> Sexual Assault</div>
-                    <div class="legend-item"><span class="legend-dot dot-pocso"></span> POCSO / Minor</div>
-                    <div class="legend-item"><span class="legend-dot dot-domestic"></span> Domestic Violence</div>
-                    <div class="legend-item"><span class="legend-dot dot-dowry"></span> Dowry Violence</div>
-                    <div class="legend-item"><span class="legend-dot dot-harassment"></span> Harassment / Stalking</div>
-                    <div class="legend-item"><span class="legend-dot dot-acid"></span> Acid Attack</div>
-                </div>
-            </div>
 
-            <!-- IIPMaps-style Thematic Choropleth Gradient Legend -->
-            <div class="choropleth-legend hidden" id="choropleth-legend">
-                <div class="choropleth-legend-header">
-                    <span><i class="fa-solid fa-chart-area"></i> State Density</span>
-                    <span class="choropleth-legend-stats" id="choropleth-range-label">0 – 130+ Reports</span>
-                </div>
-                <div class="choropleth-gradient-bar"></div>
-                <div class="choropleth-gradient-ticks">
-                    <span>0</span>
-                    <span>25</span>
-                    <span>50</span>
-                    <span>75</span>
-                    <span>100+</span>
+                <!-- IIPMaps-style Thematic Choropleth Gradient Legend -->
+                <div class="choropleth-legend hidden" id="choropleth-legend">
+                    <div class="choropleth-legend-header">
+                        <span><i class="fa-solid fa-chart-area"></i> State Density</span>
+                        <span class="choropleth-legend-stats" id="choropleth-range-label">0 – 166+ Reports</span>
+                    </div>
+                    <div class="choropleth-gradient-bar"></div>
+                    <div class="choropleth-gradient-ticks" id="choropleth-gradient-ticks">
+                        <span>0</span>
+                        <span id="tick-25">25</span>
+                        <span id="tick-50">50</span>
+                        <span id="tick-75">75</span>
+                        <span id="tick-100">100+</span>
+                    </div>
                 </div>
             </div>
 

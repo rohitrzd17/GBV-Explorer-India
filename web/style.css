@@ -872,19 +872,45 @@ input:checked + .slider:before {
     border: none;
 }
 
+/* Map Legends Container (Stacks Incident Legend & State Density with zero overlap) */
+.map-legends-container {
+    position: absolute;
+    bottom: 24px;
+    left: 16px;
+    z-index: 950;
+    display: flex;
+    flex-direction: column-reverse; /* State Density sits neatly above Incident Legend */
+    gap: 10px;
+    pointer-events: none;
+    max-width: 280px;
+    transition: all 0.25s ease;
+}
+
+.map-legends-container .map-legend,
+.map-legends-container .choropleth-legend {
+    position: static !important;
+    bottom: auto !important;
+    left: auto !important;
+    pointer-events: auto !important;
+    margin: 0 !important;
+}
+
 /* Map Legend Styles */
 .map-legend {
-    position: absolute;
-    bottom: 25px;
-    left: 15px;
     background: rgba(15, 23, 42, 0.92);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 10px 12px;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 10px;
+    padding: 10px 14px;
     font-size: 0.72rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
     z-index: 800;
     transition: all 0.2s ease;
+    width: 220px;
+}
+
+.map-legend.hidden {
+    display: none !important;
 }
 
 .legend-header {
@@ -1367,20 +1393,47 @@ input:checked + .slider:before {
         border-radius: 12px;
     }
 
-    /* Legend on Mobile: small floating pill above Filters button */
-    .map-legend {
-        bottom: 82px;
+    /* Map Legends on Mobile: floating neatly above Zoom Earth Filters button (bottom: 84px) */
+    .map-legends-container {
+        bottom: 84px;
         left: 16px;
-        padding: 6px 10px;
-        max-width: 175px;
-        font-size: 0.65rem;
-        z-index: 1050;
-        background: rgba(15, 23, 42, 0.88);
-        backdrop-filter: blur(8px);
+        z-index: 1150;
+        gap: 8px;
+        max-width: min(280px, calc(100vw - 32px));
     }
 
-    .map-legend.collapsed .legend-items {
+    .map-legends-container .map-legend {
+        padding: 6px 10px;
+        max-width: 190px;
+        font-size: 0.68rem;
+        background: rgba(15, 23, 42, 0.94);
+        backdrop-filter: blur(10px);
+    }
+
+    .map-legends-container .map-legend.collapsed .legend-items {
         display: none !important;
+    }
+
+    .map-legends-container .choropleth-legend {
+        width: 225px;
+        max-width: calc(100vw - 32px);
+        padding: 8px 12px;
+        font-size: 0.7rem;
+        background: rgba(15, 23, 42, 0.94);
+        backdrop-filter: blur(10px);
+        display: block;
+    }
+
+    .map-legends-container .choropleth-legend.hidden {
+        display: none !important;
+    }
+
+    .map-legends-container .choropleth-legend-stats {
+        font-size: 0.65rem;
+    }
+
+    .map-legends-container .choropleth-gradient-ticks {
+        font-size: 0.62rem;
     }
 
     /* MOBILE FILTER BOTTOM SHEET MODAL */
@@ -1662,19 +1715,20 @@ input:checked + .slider:before {
     color: #ffffff;
 }
 
+/* Universal Hidden Utility */
+.hidden {
+    display: none !important;
+}
+
 /* IIPMaps-style Choropleth Density Gradient Legend */
 .choropleth-legend {
-    position: absolute;
-    bottom: 24px;
-    left: 16px;
-    z-index: 1000;
-    background: rgba(15, 23, 42, 0.88);
+    background: rgba(15, 23, 42, 0.92);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 10px;
     padding: 10px 14px;
-    width: 240px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    width: 250px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
     pointer-events: auto;
     font-family: inherit;
     transition: opacity 0.2s ease, transform 0.2s ease;

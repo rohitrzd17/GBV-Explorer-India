@@ -226,6 +226,39 @@ function initMap() {
         disableClusteringAtZoom: 16
     });
     map.addLayer(markersGroup);
+
+    // Click outside in blank area (ocean, neighboring countries, non-state areas) resets to whole country view
+    map.on('click', (e) => {
+        const tooltipEl = document.getElementById('state-tooltip');
+        if (tooltipEl) tooltipEl.classList.add('hidden');
+
+        const stateSelect = document.getElementById('filter-state');
+        const isStateFiltered = stateSelect && stateSelect.value !== 'All';
+
+        if (isStateFiltered) {
+            resetToWholeCountryView();
+        } else if (map.getZoom() > 5.2 && (currentLayerMode === 'choropleth' || currentLayerMode === 'hybrid')) {
+            resetToWholeCountryView();
+        }
+    });
+}
+
+// Reset view to whole country view (All States)
+function resetToWholeCountryView() {
+    const stateSelect = document.getElementById('filter-state');
+    const wasFiltered = stateSelect && stateSelect.value !== 'All';
+    if (stateSelect) {
+        stateSelect.value = 'All';
+    }
+    if (wasFiltered) {
+        applyFilters();
+    }
+    if (map) {
+        map.flyTo([22.8, 80.0], 5, {
+            duration: 0.8,
+            easeLinearity: 0.25
+        });
+    }
 }
 
 // Load Official India State Boundaries for Thematic Choropleth (Survey of India Compliant)
@@ -513,6 +546,14 @@ function renderChoroplethLayer() {
     if (rangeLabel) {
         rangeLabel.textContent = `0 – ${maxCount}+ Reports`;
     }
+    const t25 = document.getElementById('tick-25');
+    const t50 = document.getElementById('tick-50');
+    const t75 = document.getElementById('tick-75');
+    const t100 = document.getElementById('tick-100');
+    if (t25) t25.textContent = Math.round(maxCount * 0.25);
+    if (t50) t50.textContent = Math.round(maxCount * 0.50);
+    if (t75) t75.textContent = Math.round(maxCount * 0.75);
+    if (t100) t100.textContent = `${maxCount}+`;
 
     const tooltipEl = document.getElementById('state-tooltip');
 
@@ -596,10 +637,20 @@ function renderChoroplethLayer() {
                     }
                 },
                 click: (e) => {
+                    L.DomEvent.stopPropagation(e);
                     if (tooltipEl) tooltipEl.classList.add('hidden');
-                    map.fitBounds(e.target.getBounds(), { padding: [30, 30], maxZoom: 8 });
 
                     const stateSelect = document.getElementById('filter-state');
+                    const currentState = stateSelect ? stateSelect.value : 'All';
+
+                    // Toggle: clicking the currently highlighted state resets back to whole country
+                    if (normalizeStateName(currentState) === stName || currentState === feature.properties.st_nm) {
+                        resetToWholeCountryView();
+                        return;
+                    }
+
+                    map.fitBounds(e.target.getBounds(), { padding: [30, 30], maxZoom: 8 });
+
                     if (stateSelect) {
                         for (let opt of stateSelect.options) {
                             if (normalizeStateName(opt.value) === stName || opt.value === feature.properties.st_nm) {
