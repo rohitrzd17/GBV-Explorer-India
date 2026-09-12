@@ -115,20 +115,81 @@ async function sha256(str) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Initialize Leaflet Map (100% Open-Source Tiles, No API Key required)
+// Load Official India Borders (Survey of India / OpenStreetMap India osm-in.github.io compliance)
+async function loadIndiaBoundaries() {
+    try {
+        // 1. Mask disputed lines that standard OSM tiles render incorrectly
+        const dispRes = await fetch('./data/osm-india-disputed-lines.geojson');
+        if (dispRes.ok) {
+            const dispData = await dispRes.json();
+            
+            // Mask layer: covers disputed/dashed internal lines with land background color
+            L.geoJSON(dispData, {
+                filter: (feature) => feature.properties && feature.properties.disputed_by === 'IN',
+                style: {
+                    color: '#f2efe9',
+                    weight: 6,
+                    opacity: 1.0,
+                    interactive: false
+                }
+            }).addTo(map);
+
+            // Claimed boundary lines: renders official sovereign boundaries of India (J&K, Ladakh, Arunachal)
+            L.geoJSON(dispData, {
+                filter: (feature) => feature.properties && feature.properties.claimed_by === 'IN',
+                style: {
+                    color: '#1e293b',
+                    weight: 2.5,
+                    opacity: 0.9,
+                    interactive: false
+                }
+            }).addTo(map);
+        }
+    } catch (err) {
+        console.warn('Could not load disputed lines GeoJSON:', err);
+    }
+
+    try {
+        // 2. Official Survey of India outline polygon (from Datameet / osm-in.github.io)
+        const bndRes = await fetch('./data/india-boundary.geojson');
+        if (bndRes.ok) {
+            const bndData = await bndRes.json();
+            L.geoJSON(bndData, {
+                style: {
+                    color: '#0f172a',
+                    weight: 2,
+                    opacity: 0.85,
+                    fill: false,
+                    interactive: false
+                }
+            }).addTo(map);
+        }
+    } catch (err) {
+        console.warn('Could not load India boundary GeoJSON:', err);
+    }
+}
+
+// Initialize Leaflet Map (with OpenStreetMap India boundaries compliance)
 function initMap() {
     map = L.map('map', {
         center: [22.8, 80.0], // Geographic center of India
         zoom: 5,
         minZoom: 4,
-        maxZoom: 14
+        maxZoom: 18,
+        zoomControl: false
     });
 
-    // Open-source OpenStreetMap and CartoDB base tiles (Zero API key needed)
+    // Clean top-right zoom control
+    L.control.zoom({ position: 'topright' }).addTo(map);
+
+    // Open-source base tiles with OpenStreetMap India attribution
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Borders as per <a href="https://osm-in.github.io" target="_blank">OpenStreetMap India / Survey of India</a>',
         maxZoom: 19
     }).addTo(map);
+
+    // Apply official boundaries compliance
+    loadIndiaBoundaries();
 
     markersGroup = L.markerClusterGroup({
         showCoverageOnHover: false,
@@ -188,14 +249,22 @@ async function fetchStats() {
         }
 
         const stats = await res.json();
-        document.getElementById('stat-total').textContent = stats.total_incidents || allIncidents.length;
-        document.getElementById('stat-geocoded').textContent = stats.geocoded_incidents || 0;
-        
+        const total = stats.total_incidents || allIncidents.length;
+        const geocoded = stats.geocoded_incidents || 0;
         let topCat = '-';
         if (stats.categories && Object.keys(stats.categories).length > 0) {
             topCat = Object.keys(stats.categories)[0];
         }
-        document.getElementById('stat-top-cat').textContent = topCat;
+
+        if (document.getElementById('stat-total')) document.getElementById('stat-total').textContent = total;
+        if (document.getElementById('stat-geocoded')) document.getElementById('stat-geocoded').textContent = geocoded;
+        if (document.getElementById('stat-top-cat')) document.getElementById('stat-top-cat').textContent = topCat;
+
+        // Mobile header, menu, and floating buttons
+        if (document.getElementById('mobile-stat-total')) document.getElementById('mobile-stat-total').textContent = total;
+        if (document.getElementById('mobile-menu-geocoded')) document.getElementById('mobile-menu-geocoded').textContent = geocoded;
+        if (document.getElementById('mobile-menu-top-cat')) document.getElementById('mobile-menu-top-cat').textContent = topCat;
+        if (document.getElementById('zoom-inc-badge')) document.getElementById('zoom-inc-badge').textContent = total;
     } catch (err) {
         console.error('Failed to fetch stats:', err);
     }
@@ -301,6 +370,9 @@ function renderMapMarkers() {
 function renderIncidentList() {
     const listContainer = document.getElementById('incident-list');
     document.getElementById('drawer-count').textContent = filteredIncidents.length;
+    if (document.getElementById('zoom-inc-badge')) {
+        document.getElementById('zoom-inc-badge').textContent = filteredIncidents.length;
+    }
     listContainer.innerHTML = '';
 
     if (filteredIncidents.length === 0) {
@@ -323,8 +395,12 @@ function renderIncidentList() {
             </div>
         `;
         card.addEventListener('click', () => {
+            // If on mobile, close the full-page incidents drawer so the map is visible
+            if (window.innerWidth <= 820) {
+                closeDrawer();
+            }
             if (inc.latitude && inc.longitude) {
-                map.flyTo([inc.latitude, inc.longitude], 10, { duration: 1.2 });
+                map.flyTo([inc.latitude, inc.longitude], 11, { duration: 1.2 });
                 const marker = markerMap.get(inc.id);
                 if (marker) {
                     setTimeout(() => marker.openPopup(), 1300);
@@ -1020,17 +1096,123 @@ function setupEvents() {
         });
     }
 
-    // Mobile Filter Bar Toggle
-    const mobileFilterToggle = document.getElementById('mobile-filter-toggle');
-    if (mobileFilterToggle) {
-        mobileFilterToggle.addEventListener('click', () => {
-            const filterBar = document.getElementById('filter-bar');
-            filterBar.classList.toggle('active');
-            const chevron = document.getElementById('mobile-filter-chevron');
-            if (chevron) {
-                chevron.classList.toggle('fa-chevron-up');
-                chevron.classList.toggle('fa-chevron-down');
+    // Drawer & Filter Sheet DOM Elements
+    const sideDrawer = document.getElementById('side-drawer');
+    const drawerBackdrop = document.getElementById('drawer-backdrop');
+    const toggleListBtn = document.getElementById('toggle-list-btn');
+    const closeDrawerBtn = document.getElementById('close-drawer-btn');
+    const closeDrawerMobileBtn = document.getElementById('close-drawer-mobile-btn');
+    const floatingIncidentsBtn = document.getElementById('floating-incidents-btn');
+    const floatingFilterBtn = document.getElementById('floating-filter-btn');
+    const closeFilterSheetBtn = document.getElementById('close-filter-sheet-btn');
+    const applyFiltersBtn = document.getElementById('apply-filters-btn');
+    const filterBar = document.getElementById('filter-bar');
+
+    // Drawer Open/Close Logic (NO backdrop/blur on PC!)
+    function openDrawer() {
+        sideDrawer.classList.remove('hidden');
+        sideDrawer.classList.add('active');
+        // Never show backdrop blur on PC; on mobile, drawer is 100% full screen
+        if (drawerBackdrop) drawerBackdrop.classList.remove('active');
+    }
+
+    function closeDrawer() {
+        sideDrawer.classList.add('hidden');
+        sideDrawer.classList.remove('active');
+    }
+
+    if (toggleListBtn) {
+        toggleListBtn.addEventListener('click', () => {
+            if (sideDrawer.classList.contains('hidden') || !sideDrawer.classList.contains('active')) {
+                openDrawer();
+            } else {
+                closeDrawer();
             }
+        });
+    }
+    if (floatingIncidentsBtn) floatingIncidentsBtn.addEventListener('click', openDrawer);
+    if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', closeDrawer);
+    if (closeDrawerMobileBtn) closeDrawerMobileBtn.addEventListener('click', closeDrawer);
+
+    // Mobile Filters Sheet Logic
+    function openFiltersSheet() {
+        if (filterBar) filterBar.classList.add('active');
+        if (drawerBackdrop && window.innerWidth <= 820) drawerBackdrop.classList.add('active');
+    }
+
+    function closeFiltersSheet() {
+        if (filterBar) filterBar.classList.remove('active');
+        if (drawerBackdrop) drawerBackdrop.classList.remove('active');
+    }
+
+    if (floatingFilterBtn) floatingFilterBtn.addEventListener('click', openFiltersSheet);
+    if (closeFilterSheetBtn) closeFilterSheetBtn.addEventListener('click', closeFiltersSheet);
+    if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', closeFiltersSheet);
+
+    // Mobile Menu Dropdown Logic
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenuSheet = document.getElementById('mobile-menu-sheet');
+    const closeMobileMenuBtn = document.getElementById('close-mobile-menu-btn');
+
+    function toggleMobileMenu() {
+        if (!mobileMenuSheet) return;
+        const isActive = mobileMenuSheet.classList.toggle('active');
+        if (drawerBackdrop && window.innerWidth <= 820) {
+            drawerBackdrop.classList.toggle('active', isActive);
+        }
+    }
+
+    function closeMobileMenu() {
+        if (mobileMenuSheet) mobileMenuSheet.classList.remove('active');
+        if (drawerBackdrop) drawerBackdrop.classList.remove('active');
+    }
+
+    if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+    if (closeMobileMenuBtn) closeMobileMenuBtn.addEventListener('click', closeMobileMenu);
+
+    const mobileExportBtn = document.getElementById('mobile-export-csv-btn');
+    if (mobileExportBtn) {
+        mobileExportBtn.addEventListener('click', () => {
+            closeMobileMenu();
+            exportCSV();
+        });
+    }
+
+    const mobileAdminBtn = document.getElementById('mobile-admin-btn');
+    if (mobileAdminBtn) {
+        mobileAdminBtn.addEventListener('click', () => {
+            closeMobileMenu();
+            handleAdminClick();
+        });
+    }
+
+    const mobileRefreshBtn = document.getElementById('mobile-refresh-btn');
+    if (mobileRefreshBtn) {
+        mobileRefreshBtn.addEventListener('click', () => {
+            closeMobileMenu();
+            const refBtn = document.getElementById('refresh-btn');
+            if (refBtn) refBtn.click();
+        });
+    }
+
+    // Backdrop click dismisses mobile sheets
+    if (drawerBackdrop) {
+        drawerBackdrop.addEventListener('click', () => {
+            closeFiltersSheet();
+            closeMobileMenu();
+        });
+    }
+
+    // Drawer Live Search
+    const drawerSearch = document.getElementById('drawer-quick-search');
+    if (drawerSearch) {
+        drawerSearch.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            const cards = document.querySelectorAll('#incident-list .incident-card');
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(query) ? '' : 'none';
+            });
         });
     }
 
@@ -1049,36 +1231,6 @@ function setupEvents() {
     }
     if (toggleLegendBtn) toggleLegendBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleLegend(); });
     if (legendHeader) legendHeader.addEventListener('click', toggleLegend);
-
-    // Mobile Side Drawer & Backdrop Controls
-    const sideDrawer = document.getElementById('side-drawer');
-    const drawerBackdrop = document.getElementById('drawer-backdrop');
-    const toggleListBtn = document.getElementById('toggle-list-btn');
-    const closeDrawerBtn = document.getElementById('close-drawer-btn');
-
-    function openDrawer() {
-        sideDrawer.classList.remove('hidden');
-        sideDrawer.classList.add('active');
-        if (drawerBackdrop) drawerBackdrop.classList.add('active');
-    }
-
-    function closeDrawer() {
-        sideDrawer.classList.add('hidden');
-        sideDrawer.classList.remove('active');
-        if (drawerBackdrop) drawerBackdrop.classList.remove('active');
-    }
-
-    if (toggleListBtn) {
-        toggleListBtn.addEventListener('click', () => {
-            if (sideDrawer.classList.contains('hidden') || !sideDrawer.classList.contains('active')) {
-                openDrawer();
-            } else {
-                closeDrawer();
-            }
-        });
-    }
-    if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', closeDrawer);
-    if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
 
     setupAdminTabs();
 }

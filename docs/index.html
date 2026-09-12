@@ -58,20 +58,53 @@
                 <i class="fa-solid fa-list"></i> Incidents
             </button>
         </div>
+
+        <!-- Mobile Header Quick Controls (Visible only on mobile) -->
+        <div class="mobile-header-controls">
+            <div class="mobile-stat-chip">
+                <span class="mobile-stat-num" id="mobile-stat-total">-</span>
+                <span class="mobile-stat-txt">Reports</span>
+            </div>
+            <button id="mobile-menu-btn" class="mobile-icon-btn" title="Open menu" type="button">
+                <i class="fa-solid fa-ellipsis-vertical"></i>
+            </button>
+        </div>
     </header>
+
+    <!-- Mobile Quick Menu Sheet -->
+    <div id="mobile-menu-sheet" class="mobile-menu-sheet">
+        <div class="mobile-menu-header">
+            <h4><i class="fa-solid fa-sliders"></i> Quick Menu</h4>
+            <button id="close-mobile-menu-btn" class="btn-close-sm" type="button"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="mobile-menu-body">
+            <div class="mobile-menu-stats-row">
+                <div class="m-stat-box">
+                    <span class="m-stat-label">Geocoded</span>
+                    <span class="m-stat-val" id="mobile-menu-geocoded">-</span>
+                </div>
+                <div class="m-stat-box">
+                    <span class="m-stat-label">Top Category</span>
+                    <span class="m-stat-val" id="mobile-menu-top-cat">-</span>
+                </div>
+            </div>
+            <div class="mobile-menu-buttons">
+                <button id="mobile-export-csv-btn" class="btn btn-success btn-block" type="button"><i class="fa-solid fa-file-arrow-down"></i> Export CSV</button>
+                <button id="mobile-admin-btn" class="btn btn-warning btn-block" type="button"><i class="fa-solid fa-lock"></i> Database Admin</button>
+                <button id="mobile-refresh-btn" class="btn btn-primary btn-block" type="button"><i class="fa-solid fa-arrows-rotate"></i> Refresh Feeds</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Content Area -->
     <div class="main-container">
-        <!-- Mobile Filter Bar Header (Visible only on mobile) -->
-        <div class="mobile-filter-bar">
-            <button id="mobile-filter-toggle" class="mobile-filter-btn" type="button">
-                <span><i class="fa-solid fa-sliders"></i> Search & Filter Controls</span>
-                <i class="fa-solid fa-chevron-down" id="mobile-filter-chevron"></i>
-            </button>
-        </div>
-
-        <!-- Floating Filter Bar (Collapsible on mobile) -->
+        <!-- Floating Filter Bar (Bottom sheet on mobile, top floating bar on PC) -->
         <div class="filter-bar" id="filter-bar">
+            <div class="filter-bar-header">
+                <h4><i class="fa-solid fa-sliders"></i> Search & Filters</h4>
+                <button id="close-filter-sheet-btn" class="btn-close-sm" type="button"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
             <div class="filter-group search-group">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" id="filter-search" placeholder="Search keywords, town, district...">
@@ -108,15 +141,34 @@
             </div>
 
             <div class="filter-group reset-btn-group">
-                <button id="reset-filters-btn" class="btn btn-ghost" title="Reset All Filters">
+                <button id="reset-filters-btn" class="btn btn-ghost" title="Reset All Filters" type="button">
                     <i class="fa-solid fa-xmark"></i> Clear
                 </button>
+            </div>
+
+            <div class="filter-mobile-apply">
+                <button id="apply-filters-btn" class="btn btn-primary btn-block" type="button"><i class="fa-solid fa-check"></i> View Results</button>
             </div>
         </div>
 
         <!-- Map View -->
         <div id="map-container">
             <div id="map"></div>
+
+            <!-- Zoom Earth Inspired Mobile Floating Controls (Filters bottom-left, Incidents bottom-right) -->
+            <div class="zoom-floating-controls">
+                <button id="floating-filter-btn" class="zoom-floating-btn zoom-filter-btn" type="button" title="Open Filters">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>Filters</span>
+                </button>
+
+                <button id="floating-incidents-btn" class="zoom-floating-btn zoom-incidents-btn" type="button" title="View Incidents List">
+                    <i class="fa-solid fa-list-ul"></i>
+                    <span>Incidents</span>
+                    <span class="zoom-badge" id="zoom-inc-badge">0</span>
+                </button>
+            </div>
+
             <!-- Map Legend (Collapsible on mobile) -->
             <div class="map-legend" id="map-legend">
                 <div class="legend-header" id="legend-header">
@@ -136,14 +188,21 @@
             </div>
         </div>
 
-        <!-- Backdrop overlay for mobile drawer -->
+        <!-- Backdrop overlay for mobile modals only (NOT on PC) -->
         <div id="drawer-backdrop" class="drawer-backdrop"></div>
 
-        <!-- Side Drawer: Incident List -->
+        <!-- Side Drawer: Incident List (Full-Page on Mobile, Overlay on PC) -->
         <aside id="side-drawer" class="side-drawer hidden">
             <div class="drawer-header">
-                <h3>Reported Incidents (<span id="drawer-count">0</span>)</h3>
-                <button id="close-drawer-btn" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+                <div class="drawer-title-group">
+                    <button id="close-drawer-mobile-btn" class="btn-back" title="Back to map" type="button"><i class="fa-solid fa-arrow-left"></i></button>
+                    <h3>Reported Incidents (<span id="drawer-count">0</span>)</h3>
+                </div>
+                <button id="close-drawer-btn" class="btn-close" title="Close" type="button"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="drawer-search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="drawer-quick-search" placeholder="Search incidents in list...">
             </div>
             <div id="incident-list" class="incident-list">
                 <!-- Incident cards dynamically injected here -->
