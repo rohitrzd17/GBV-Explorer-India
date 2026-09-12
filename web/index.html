@@ -62,8 +62,16 @@
 
     <!-- Main Content Area -->
     <div class="main-container">
-        <!-- Floating Filter Bar -->
-        <div class="filter-bar">
+        <!-- Mobile Filter Bar Header (Visible only on mobile) -->
+        <div class="mobile-filter-bar">
+            <button id="mobile-filter-toggle" class="mobile-filter-btn" type="button">
+                <span><i class="fa-solid fa-sliders"></i> Search & Filter Controls</span>
+                <i class="fa-solid fa-chevron-down" id="mobile-filter-chevron"></i>
+            </button>
+        </div>
+
+        <!-- Floating Filter Bar (Collapsible on mobile) -->
+        <div class="filter-bar" id="filter-bar">
             <div class="filter-group search-group">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" id="filter-search" placeholder="Search keywords, town, district...">
@@ -109,20 +117,30 @@
         <!-- Map View -->
         <div id="map-container">
             <div id="map"></div>
-            <!-- Map Legend -->
-            <div class="map-legend">
-                <h4><i class="fa-solid fa-circle-info"></i> Incident Categories</h4>
-                <div class="legend-item"><span class="legend-dot dot-assault"></span> Sexual Assault</div>
-                <div class="legend-item"><span class="legend-dot dot-pocso"></span> POCSO / Minor</div>
-                <div class="legend-item"><span class="legend-dot dot-domestic"></span> Domestic Violence</div>
-                <div class="legend-item"><span class="legend-dot dot-dowry"></span> Dowry Violence</div>
-                <div class="legend-item"><span class="legend-dot dot-harassment"></span> Harassment / Stalking</div>
-                <div class="legend-item"><span class="legend-dot dot-acid"></span> Acid Attack</div>
+            <!-- Map Legend (Collapsible on mobile) -->
+            <div class="map-legend" id="map-legend">
+                <div class="legend-header" id="legend-header">
+                    <h4><i class="fa-solid fa-circle-info"></i> Legend</h4>
+                    <button id="toggle-legend-btn" class="legend-toggle-btn" title="Toggle Legend" type="button">
+                        <i class="fa-solid fa-chevron-up" id="legend-chevron"></i>
+                    </button>
+                </div>
+                <div class="legend-items" id="legend-items">
+                    <div class="legend-item"><span class="legend-dot dot-assault"></span> Sexual Assault</div>
+                    <div class="legend-item"><span class="legend-dot dot-pocso"></span> POCSO / Minor</div>
+                    <div class="legend-item"><span class="legend-dot dot-domestic"></span> Domestic Violence</div>
+                    <div class="legend-item"><span class="legend-dot dot-dowry"></span> Dowry Violence</div>
+                    <div class="legend-item"><span class="legend-dot dot-harassment"></span> Harassment / Stalking</div>
+                    <div class="legend-item"><span class="legend-dot dot-acid"></span> Acid Attack</div>
+                </div>
             </div>
         </div>
 
+        <!-- Backdrop overlay for mobile drawer -->
+        <div id="drawer-backdrop" class="drawer-backdrop"></div>
+
         <!-- Side Drawer: Incident List -->
-        <aside id="side-drawer" class="side-drawer">
+        <aside id="side-drawer" class="side-drawer hidden">
             <div class="drawer-header">
                 <h3>Reported Incidents (<span id="drawer-count">0</span>)</h3>
                 <button id="close-drawer-btn" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
@@ -212,6 +230,7 @@
                 <button class="admin-tab-btn" data-tab="tab-add-incident"><i class="fa-solid fa-circle-plus"></i> Add Incident</button>
                 <button class="admin-tab-btn" data-tab="tab-feeds"><i class="fa-solid fa-rss"></i> RSS Feeds</button>
                 <button class="admin-tab-btn" data-tab="tab-sources"><i class="fa-solid fa-newspaper"></i> Raw Sources</button>
+                <button id="admin-export-btn" class="btn btn-secondary-sm" title="Export current incidents as JSON"><i class="fa-solid fa-download"></i> Export JSON</button>
                 <button id="admin-purge-btn" class="btn btn-danger-sm" title="Remove non-India reports from database"><i class="fa-solid fa-trash-can"></i> Purge Non-India</button>
             </div>
 

@@ -475,11 +475,13 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 12px;
     width: 620px;
-    max-width: 92%;
+    max-width: 94%;
     max-height: 85vh;
     display: flex;
     flex-direction: column;
     box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7);
+    overflow-x: hidden;
+    box-sizing: border-box;
 }
 
 .modal-header {
@@ -488,11 +490,76 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+#modal-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.35;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    margin-top: 4px;
 }
 
 .modal-body {
     padding: 18px 20px;
     overflow-y: auto;
+    overflow-x: hidden;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    box-sizing: border-box;
+}
+
+.modal-summary-text {
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text-main);
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+    white-space: pre-wrap;
+    max-width: 100%;
+    margin-bottom: 12px;
+}
+
+.sources-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+.source-item {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.source-item > div {
+    min-width: 0;
+    flex: 1;
+}
+
+.source-item a {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
 }
 
 /* Admin Modal Specifics */
@@ -796,7 +863,77 @@ input:checked + .slider:before {
     border: none;
 }
 
-/* Responsive Breakpoints: Prevents Header Overflow */
+/* Map Legend Styles */
+.map-legend {
+    position: absolute;
+    bottom: 25px;
+    left: 15px;
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.72rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    z-index: 800;
+    transition: all 0.2s ease;
+}
+
+.legend-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.legend-header h4 {
+    font-size: 0.75rem;
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.legend-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 0.72rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+.legend-toggle-btn:hover {
+    color: var(--text-main);
+}
+
+.legend-items {
+    margin-top: 6px;
+}
+
+.map-legend.collapsed .legend-items {
+    display: none;
+}
+
+/* Mobile Filter Bar Header (Desktop: Hidden) */
+.mobile-filter-bar {
+    display: none;
+}
+
+/* Backdrop Overlay for Mobile Bottom Drawer */
+.drawer-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px);
+    z-index: 1400;
+}
+
+.drawer-backdrop.active {
+    display: block;
+}
+
+/* Responsive Breakpoints: Prevents Header Overflow & Cleans Mobile UI */
 @media (max-width: 1024px) {
     .metrics-strip {
         gap: 6px;
@@ -822,38 +959,199 @@ input:checked + .slider:before {
         padding: 8px 12px;
         flex-direction: column;
         align-items: stretch;
+        gap: 8px;
     }
+
     .header-brand {
-        justify-content: space-between;
-    }
-    .metrics-strip {
+        display: flex;
+        align-items: center;
         justify-content: space-between;
         width: 100%;
     }
+
+    .header-brand h1 {
+        font-size: 1.05rem;
+    }
+
+    .tagline {
+        display: none; /* Hide verbose subtitle to conserve vertical space */
+    }
+
+    /* Streamlined horizontal metrics strip on mobile */
+    .metrics-strip {
+        display: flex;
+        flex-direction: row;
+        gap: 6px;
+        width: 100%;
+        justify-content: space-between;
+    }
+
     .metric-card {
         flex: 1;
+        padding: 3px 6px;
+        min-width: 0;
+        text-align: center;
     }
+
+    .metric-label {
+        font-size: 0.55rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .metric-value {
+        font-size: 0.85rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Action Buttons in 4-column compact grid */
     .header-actions {
-        justify-content: flex-end;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        width: 100%;
     }
+
+    .header-actions .btn {
+        padding: 6px 4px;
+        font-size: 0.72rem;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    /* Mobile Filter Bar Toggle Button */
+    .mobile-filter-bar {
+        display: flex;
+        width: 100%;
+        background: var(--bg-surface);
+        padding: 6px 12px;
+        border-bottom: 1px solid var(--border-color);
+        box-sizing: border-box;
+    }
+
+    .mobile-filter-btn {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 7px 12px;
+        background: var(--bg-main);
+        color: var(--text-main);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .mobile-filter-btn:hover {
+        border-color: var(--primary);
+    }
+
+    /* Collapsible Filter Bar */
     .filter-bar {
         position: static;
         width: 100%;
         max-width: 100%;
         border-radius: 0;
-        border-left: none;
-        border-right: none;
-        border-top: none;
+        border: none;
+        border-bottom: 1px solid var(--border-color);
+        padding: 10px 12px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: var(--bg-surface);
+        box-shadow: none;
+        transition: max-height 0.3s ease;
     }
+
+    .filter-bar.collapsed {
+        display: none;
+    }
+
+    .filter-group {
+        width: 100%;
+    }
+
+    .filter-group label {
+        display: none; /* Icon and placeholder are enough on mobile */
+    }
+
+    .filter-group select, .filter-group input {
+        width: 100%;
+    }
+
+    /* Main Container & Full-Screen Map */
     .main-container {
         flex-direction: column;
+        height: calc(100vh - 145px);
+        position: relative;
     }
-    .side-drawer {
+
+    #map-container {
+        flex: 1;
         width: 100%;
-        height: 260px;
-        border-left: none;
-        border-top: 1px solid var(--border-color);
+        height: 100%;
+        min-height: 380px;
     }
+
+    /* Map Legend on Mobile: small bottom-left collapsible pill */
+    .map-legend {
+        bottom: 20px;
+        left: 10px;
+        padding: 5px 8px;
+        max-width: 190px;
+        font-size: 0.65rem;
+    }
+
+    .map-legend.collapsed .legend-items {
+        display: none;
+    }
+
+    /* Bottom Sheet Slide-Up Drawer for Mobile Incidents */
+    .side-drawer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 72vh;
+        max-height: 72vh;
+        border-radius: 16px 16px 0 0;
+        border-left: none;
+        border-top: 2px solid var(--border-color);
+        box-shadow: 0 -10px 35px rgba(0, 0, 0, 0.75);
+        z-index: 1500;
+        transform: translateY(100%);
+        display: flex;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .side-drawer.active, .side-drawer:not(.hidden) {
+        transform: translateY(0);
+    }
+
+    .side-drawer.hidden {
+        transform: translateY(100%);
+        display: flex;
+        pointer-events: none;
+    }
+
+    .drawer-header {
+        padding: 10px 16px;
+    }
+
+    .admin-modal-content {
+        width: 100%;
+        height: 95vh;
+        max-width: 100%;
+        border-radius: 0;
+    }
+
     .admin-split-view {
         grid-template-columns: 1fr;
     }

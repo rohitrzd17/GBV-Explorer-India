@@ -8,8 +8,20 @@ import os
 import sys
 import re
 import json
+import html
 from datetime import datetime
 from typing import Dict, Any, Optional, List
+
+def clean_text(text: str) -> str:
+    if not text:
+        return ""
+    # Strip HTML tags
+    clean = re.sub(r"<[^>]+>", " ", text)
+    # Decode HTML entities like &quot;, &amp;, etc.
+    clean = html.unescape(clean)
+    # Collapse multiple whitespace
+    clean = re.sub(r"\s+", " ", clean).strip()
+    return clean
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from dotenv import load_dotenv
@@ -144,11 +156,13 @@ def rule_based_extract(headline: str, snippet: str, published_at: str) -> Option
                 break
 
     # Extract clean title (remove publisher suffix like ' - Times of India')
-    title = headline.split(" - ")[0].strip() if " - " in headline else headline
+    raw_title = headline.split(" - ")[0].strip() if " - " in headline else headline
+    title = clean_text(raw_title)
+    summary = clean_text(snippet) if snippet else title
 
     return {
         "title": title[:200],
-        "summary": snippet[:500] if snippet else title,
+        "summary": summary[:500] if summary else title,
         "category": category,
         "incident_date": published_at[:10] if published_at else datetime.utcnow().strftime("%Y-%m-%d"),
         "location_name": found_place,
@@ -202,9 +216,10 @@ def gemini_extract(headline: str, snippet: str, published_at: str) -> Optional[D
         if not data.get("is_gbv", True):
             return None
 
+        raw_title = data.get("title", headline)
         return {
-            "title": data.get("title", headline)[:200],
-            "summary": snippet[:500] if snippet else headline,
+            "title": clean_text(raw_title)[:200],
+            "summary": clean_text(snippet)[:500] if snippet else clean_text(raw_title),
             "category": data.get("category", "Other GBV"),
             "incident_date": data.get("incident_date", published_at[:10] if published_at else None),
             "location_name": data.get("incident_location") or data.get("district"),

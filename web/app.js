@@ -7,6 +7,81 @@ let filteredIncidents = [];
 let markerMap = new Map(); // incident.id -> Leaflet marker
 let indianStatesList = [];
 let isStaticMode = false;
+let isAdminAuthenticated = false; // In-memory only: resets on page refresh
+
+// Utility: Clean HTML tags and entities from plain text
+function cleanHtmlText(text) {
+    if (!text) return '';
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = text;
+    let clean = tempDiv.textContent || tempDiv.innerText || '';
+    clean = clean.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    return clean;
+}
+
+// Client-side Overrides for GitHub Pages (Offline / Static editing)
+function applyLocalStorageOverrides() {
+    try {
+        const stored = localStorage.getItem('gbv_client_overrides');
+        if (stored) {
+            const overrides = JSON.parse(stored);
+            if (overrides.edited && Array.isArray(overrides.edited)) {
+                overrides.edited.forEach(editedInc => {
+                    const idx = allIncidents.findIndex(i => i.id === editedInc.id);
+                    if (idx !== -1) {
+                        allIncidents[idx] = { ...allIncidents[idx], ...editedInc };
+                    }
+                });
+            }
+            if (overrides.deleted && Array.isArray(overrides.deleted)) {
+                const delSet = new Set(overrides.deleted);
+                allIncidents = allIncidents.filter(i => !delSet.has(i.id));
+            }
+            if (overrides.added && Array.isArray(overrides.added)) {
+                overrides.added.forEach(addedInc => {
+                    if (!allIncidents.some(i => i.id === addedInc.id)) {
+                        allIncidents.unshift(addedInc);
+                    }
+                });
+            }
+        }
+    } catch (e) {
+        console.warn('Error applying client overrides:', e);
+    }
+}
+
+function saveClientEdit(incident) {
+    try {
+        let overrides = JSON.parse(localStorage.getItem('gbv_client_overrides') || '{"edited":[],"deleted":[],"added":[]}');
+        overrides.edited = overrides.edited.filter(i => i.id !== incident.id);
+        overrides.edited.push(incident);
+        localStorage.setItem('gbv_client_overrides', JSON.stringify(overrides));
+    } catch (e) {
+        console.error('Error saving edit to localStorage:', e);
+    }
+}
+
+function saveClientDelete(id) {
+    try {
+        let overrides = JSON.parse(localStorage.getItem('gbv_client_overrides') || '{"edited":[],"deleted":[],"added":[]}');
+        if (!overrides.deleted.includes(id)) overrides.deleted.push(id);
+        overrides.edited = overrides.edited.filter(i => i.id !== id);
+        overrides.added = overrides.added.filter(i => i.id !== id);
+        localStorage.setItem('gbv_client_overrides', JSON.stringify(overrides));
+    } catch (e) {
+        console.error('Error saving delete to localStorage:', e);
+    }
+}
+
+function saveClientAdd(incident) {
+    try {
+        let overrides = JSON.parse(localStorage.getItem('gbv_client_overrides') || '{"edited":[],"deleted":[],"added":[]}');
+        overrides.added.push(incident);
+        localStorage.setItem('gbv_client_overrides', JSON.stringify(overrides));
+    } catch (e) {
+        console.error('Error saving add to localStorage:', e);
+    }
+}
 
 // SHA-256 hash of admin password (plaintext is NEVER stored in source code)
 const ADMIN_PASS_HASH = "ed8c9cfe75c84b881f159ca0a98cdc37b6f93422b6888c3ef29d5acd43fba239";
@@ -90,6 +165,9 @@ async function fetchIncidents() {
 
         const data = await res.json();
         allIncidents = data.incidents || [];
+        if (isStaticMode || window.location.hostname.includes('github.io')) {
+            applyLocalStorageOverrides();
+        }
         populateStateFilter(allIncidents);
         applyFilters();
         fetchStats();
@@ -205,9 +283,9 @@ function renderMapMarkers() {
             const popupHtml = `
                 <div style="min-width: 190px;">
                     <span class="badge ${CATEGORY_BADGES[inc.category] || 'badge-other'}">${inc.category}</span>
-                    <div class="popup-title">${escapeHtml(inc.title)}</div>
+                    <div class="popup-title">${escapeHtml(cleanHtmlText(inc.title))}</div>
                     <div class="popup-meta">
-                        <i class="fa-solid fa-location-dot"></i> ${inc.district || inc.location_name || inc.state || 'India'} &bull; ${inc.incident_date || 'Recent'}
+                        <i class="fa-solid fa-location-dot"></i> ${escapeHtml(inc.district || inc.location_name || inc.state || 'India')} &bull; ${inc.incident_date || 'Recent'}
                     </div>
                     <button class="popup-btn" onclick="openModal(${inc.id})">Details & Sources (${inc.source_count || 1})</button>
                 </div>
@@ -235,11 +313,11 @@ function renderIncidentList() {
         card.className = 'incident-card';
         card.innerHTML = `
             <div class="incident-card-header">
-                <span class="incident-card-title">${escapeHtml(inc.title)}</span>
+                <span class="incident-card-title">${escapeHtml(cleanHtmlText(inc.title))}</span>
                 <span class="badge ${CATEGORY_BADGES[inc.category] || 'badge-other'}">${inc.category}</span>
             </div>
             <div class="incident-card-meta">
-                <span><i class="fa-solid fa-location-dot"></i> ${inc.district || inc.location_name || inc.state || 'India'}</span>
+                <span><i class="fa-solid fa-location-dot"></i> ${escapeHtml(inc.district || inc.location_name || inc.state || 'India')}</span>
                 <span><i class="fa-solid fa-calendar"></i> ${inc.incident_date || 'Recent'}</span>
                 <span><i class="fa-solid fa-newspaper"></i> ${inc.source_count || 1} report(s)</span>
             </div>
@@ -264,7 +342,7 @@ async function openModal(incidentId) {
     const inc = allIncidents.find(i => i.id === incidentId);
     if (!inc) return;
 
-    document.getElementById('modal-title').textContent = inc.title;
+    document.getElementById('modal-title').textContent = cleanHtmlText(inc.title);
     const badge = document.getElementById('modal-category-badge');
     badge.className = `badge ${CATEGORY_BADGES[inc.category] || 'badge-other'}`;
     badge.textContent = inc.category;
@@ -272,7 +350,7 @@ async function openModal(incidentId) {
     document.getElementById('modal-date').textContent = inc.incident_date || 'Not specified';
     document.getElementById('modal-location').textContent = `${inc.district || inc.location_name || 'Unspecified'}, ${inc.state || 'India'}`;
     document.getElementById('modal-status').textContent = inc.legal_status || 'Under Investigation';
-    document.getElementById('modal-summary').textContent = inc.summary || inc.title;
+    document.getElementById('modal-summary').textContent = cleanHtmlText(inc.summary || inc.title);
 
     const sourcesContainer = document.getElementById('modal-sources-list');
     sourcesContainer.innerHTML = '<div style="color: var(--text-muted);">Loading verified sources...</div>';
@@ -291,8 +369,8 @@ async function openModal(incidentId) {
                 sourcesContainer.innerHTML = `
                     <div class="source-item">
                         <div>
-                            <div style="font-size: 0.85rem; font-weight: 600;">${escapeHtml(inc.title)}</div>
-                            <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(inc.publishers || 'News Outlet')}</div>
+                            <div style="font-size: 0.85rem; font-weight: 600;">${escapeHtml(cleanHtmlText(inc.title))}</div>
+                            <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(cleanHtmlText(inc.publishers || 'News Outlet'))}</div>
                         </div>
                         <a href="${inc.primary_url}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i> Read Article</a>
                     </div>
@@ -306,8 +384,8 @@ async function openModal(incidentId) {
                 item.className = 'source-item';
                 item.innerHTML = `
                     <div>
-                        <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 2px;">${escapeHtml(src.headline)}</div>
-                        <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(src.publisher || 'Media Outlet')} &bull; ${src.published_at ? src.published_at.slice(0, 10) : ''}</div>
+                        <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 2px;">${escapeHtml(cleanHtmlText(src.headline))}</div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(cleanHtmlText(src.publisher || 'Media Outlet'))} &bull; ${src.published_at ? src.published_at.slice(0, 10) : ''}</div>
                     </div>
                     <a href="${src.url}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i> Read Article</a>
                 `;
@@ -319,8 +397,8 @@ async function openModal(incidentId) {
             sourcesContainer.innerHTML = `
                 <div class="source-item">
                     <div>
-                        <div style="font-size: 0.85rem; font-weight: 600;">${escapeHtml(inc.title)}</div>
-                        <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(inc.publishers || 'News Outlet')}</div>
+                        <div style="font-size: 0.85rem; font-weight: 600;">${escapeHtml(cleanHtmlText(inc.title))}</div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(cleanHtmlText(inc.publishers || 'News Outlet'))}</div>
                     </div>
                     <a href="${inc.primary_url}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i> Read Article</a>
                 </div>
@@ -390,7 +468,7 @@ function exportCSV() {
 
 // Check authentication before opening admin
 function handleAdminClick() {
-    if (sessionStorage.getItem('gbv_admin_auth') === 'true') {
+    if (isAdminAuthenticated) {
         openAdminModal();
     } else {
         openAdminAuthModal();
@@ -417,7 +495,8 @@ async function submitAdminAuth(e) {
 
     // Verify hash against precomputed standard hash
     if (computedHash === ADMIN_PASS_HASH) {
-        sessionStorage.setItem('gbv_admin_auth', 'true');
+        isAdminAuthenticated = true;
+        sessionStorage.removeItem('gbv_admin_auth');
         closeAdminAuthModal();
         openAdminModal();
     } else {
@@ -488,7 +567,7 @@ async function loadAdminIncidents(search = '') {
             const hasCoords = inc.latitude && inc.longitude;
             tr.innerHTML = `
                 <td><strong>#${inc.id}</strong></td>
-                <td style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(inc.title)}">${escapeHtml(inc.title)}</td>
+                <td style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(cleanHtmlText(inc.title))}">${escapeHtml(cleanHtmlText(inc.title))}</td>
                 <td><span class="badge ${CATEGORY_BADGES[inc.category] || 'badge-other'}">${inc.category}</span></td>
                 <td>${escapeHtml(inc.district || inc.location_name || inc.state || 'Unmapped')}</td>
                 <td>${inc.incident_date || '-'}</td>
@@ -512,7 +591,7 @@ function openEditModal(incidentId) {
 
     document.getElementById('edit-id').value = inc.id;
     document.getElementById('edit-inc-id-display').textContent = inc.id;
-    document.getElementById('edit-title').value = inc.title || '';
+    document.getElementById('edit-title').value = cleanHtmlText(inc.title || '');
     document.getElementById('edit-category').value = inc.category || 'Other GBV';
     document.getElementById('edit-date').value = inc.incident_date || '';
     document.getElementById('edit-location').value = inc.location_name || '';
@@ -521,7 +600,7 @@ function openEditModal(incidentId) {
     document.getElementById('edit-lat').value = inc.latitude || '';
     document.getElementById('edit-lon').value = inc.longitude || '';
     document.getElementById('edit-status').value = inc.legal_status || 'Under Investigation';
-    document.getElementById('edit-summary').value = inc.summary || '';
+    document.getElementById('edit-summary').value = cleanHtmlText(inc.summary || '');
 
     document.getElementById('edit-incident-modal').classList.add('active');
 }
@@ -534,16 +613,23 @@ function closeEditModal() {
 // Delete Incident
 async function deleteIncident(id) {
     if (!confirm(`Are you sure you want to delete incident #${id}?`)) return;
+    let deletedOnServer = false;
     try {
         const res = await fetch(`/api/admin/incidents/${id}`, { method: 'DELETE' });
-        if (res.ok) {
-            loadAdminIncidents();
-            fetchIncidents();
-        } else {
-            alert('Failed to delete incident.');
-        }
+        if (res.ok) deletedOnServer = true;
     } catch (err) {
-        alert('Network error while deleting incident.');
+        console.warn('Backend DELETE failed or static mode, applying client-side deletion.');
+    }
+
+    if (deletedOnServer || isStaticMode || window.location.hostname.includes('github.io')) {
+        allIncidents = allIncidents.filter(i => i.id !== id);
+        saveClientDelete(id);
+        loadAdminIncidents();
+        applyFilters();
+        fetchStats();
+        alert(`Incident #${id} removed successfully.`);
+    } else {
+        alert('Failed to delete incident.');
     }
 }
 
@@ -800,29 +886,37 @@ function setupEvents() {
             publisher: document.getElementById('add-publisher').value || 'Manual Entry'
         };
 
+        let added = false;
         try {
             const res = await fetch('/api/admin/incidents', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            if (res.ok) {
-                alert('Incident added successfully!');
-                document.getElementById('add-incident-form').reset();
-                loadAdminIncidents();
-                fetchIncidents();
-            } else {
-                alert('Failed to add incident.');
-            }
+            if (res.ok) added = true;
         } catch (err) {
-            alert('Error adding incident.');
+            console.warn('Backend POST failed or static mode, applying client-side add.');
+        }
+
+        if (added || isStaticMode || window.location.hostname.includes('github.io')) {
+            const newId = Math.max(0, ...allIncidents.map(i => i.id || 0)) + 1;
+            const newInc = { id: newId, ...payload, source_count: 1 };
+            allIncidents.unshift(newInc);
+            saveClientAdd(newInc);
+            alert('Incident added successfully!');
+            document.getElementById('add-incident-form').reset();
+            loadAdminIncidents();
+            applyFilters();
+            fetchStats();
+        } else {
+            alert('Failed to add incident.');
         }
     });
 
     // Edit Incident Form Submit
     document.getElementById('edit-incident-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const id = document.getElementById('edit-id').value;
+        const id = parseInt(document.getElementById('edit-id').value, 10);
         const payload = {
             title: document.getElementById('edit-title').value,
             category: document.getElementById('edit-category').value,
@@ -836,21 +930,31 @@ function setupEvents() {
             summary: document.getElementById('edit-summary').value || ''
         };
 
+        let updated = false;
         try {
             const res = await fetch(`/api/admin/incidents/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            if (res.ok) {
-                closeEditModal();
-                loadAdminIncidents();
-                fetchIncidents();
-            } else {
-                alert('Failed to update incident.');
-            }
+            if (res.ok) updated = true;
         } catch (err) {
-            alert('Error updating incident.');
+            console.warn('Backend PUT failed or static mode, applying client-side edit.');
+        }
+
+        if (updated || isStaticMode || window.location.hostname.includes('github.io')) {
+            const idx = allIncidents.findIndex(i => i.id === id);
+            if (idx !== -1) {
+                allIncidents[idx] = { ...allIncidents[idx], ...payload };
+            }
+            saveClientEdit({ id, ...payload });
+            closeEditModal();
+            loadAdminIncidents();
+            applyFilters();
+            fetchStats();
+            alert(`Incident #${id} updated successfully!`);
+        } else {
+            alert('Failed to update incident.');
         }
     });
 
@@ -902,11 +1006,95 @@ function setupEvents() {
         }
     });
 
+    // Admin Export JSON button trigger
+    const adminExportBtn = document.getElementById('admin-export-btn');
+    if (adminExportBtn) {
+        adminExportBtn.addEventListener('click', () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ incidents: allIncidents }, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `incidents_export_${new Date().toISOString().slice(0, 10)}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        });
+    }
+
+    // Mobile Filter Bar Toggle
+    const mobileFilterToggle = document.getElementById('mobile-filter-toggle');
+    if (mobileFilterToggle) {
+        mobileFilterToggle.addEventListener('click', () => {
+            const filterBar = document.getElementById('filter-bar');
+            filterBar.classList.toggle('active');
+            const chevron = document.getElementById('mobile-filter-chevron');
+            if (chevron) {
+                chevron.classList.toggle('fa-chevron-up');
+                chevron.classList.toggle('fa-chevron-down');
+            }
+        });
+    }
+
+    // Collapsible Map Legend
+    const toggleLegendBtn = document.getElementById('toggle-legend-btn');
+    const legendHeader = document.getElementById('legend-header');
+    function toggleLegend() {
+        const legend = document.getElementById('map-legend');
+        if (!legend) return;
+        legend.classList.toggle('collapsed');
+        const chevron = document.getElementById('legend-chevron');
+        if (chevron) {
+            chevron.classList.toggle('fa-chevron-down');
+            chevron.classList.toggle('fa-chevron-up');
+        }
+    }
+    if (toggleLegendBtn) toggleLegendBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleLegend(); });
+    if (legendHeader) legendHeader.addEventListener('click', toggleLegend);
+
+    // Mobile Side Drawer & Backdrop Controls
+    const sideDrawer = document.getElementById('side-drawer');
+    const drawerBackdrop = document.getElementById('drawer-backdrop');
+    const toggleListBtn = document.getElementById('toggle-list-btn');
+    const closeDrawerBtn = document.getElementById('close-drawer-btn');
+
+    function openDrawer() {
+        sideDrawer.classList.remove('hidden');
+        sideDrawer.classList.add('active');
+        if (drawerBackdrop) drawerBackdrop.classList.add('active');
+    }
+
+    function closeDrawer() {
+        sideDrawer.classList.add('hidden');
+        sideDrawer.classList.remove('active');
+        if (drawerBackdrop) drawerBackdrop.classList.remove('active');
+    }
+
+    if (toggleListBtn) {
+        toggleListBtn.addEventListener('click', () => {
+            if (sideDrawer.classList.contains('hidden') || !sideDrawer.classList.contains('active')) {
+                openDrawer();
+            } else {
+                closeDrawer();
+            }
+        });
+    }
+    if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', closeDrawer);
+    if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
+
     setupAdminTabs();
 }
 
 // Boot
 window.addEventListener('DOMContentLoaded', () => {
+    sessionStorage.removeItem('gbv_admin_auth'); // Reset session auth on page load
+    if (window.innerWidth <= 820) {
+        const legend = document.getElementById('map-legend');
+        if (legend) legend.classList.add('collapsed');
+        const legendChevron = document.getElementById('legend-chevron');
+        if (legendChevron) {
+            legendChevron.classList.remove('fa-chevron-up');
+            legendChevron.classList.add('fa-chevron-down');
+        }
+    }
     initMap();
     setupEvents();
     fetchIncidents();
