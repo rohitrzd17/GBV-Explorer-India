@@ -250,6 +250,30 @@ body {
     background-color: #0c1220;
 }
 
+/* Leaflet GPU Hardware Acceleration & Smooth Zoom Transitions */
+.leaflet-zoom-anim .leaflet-zoom-animated {
+    transition: transform 0.28s cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+    will-change: transform;
+}
+
+.leaflet-tile-container {
+    will-change: transform;
+}
+
+.leaflet-container {
+    -webkit-tap-highlight-color: transparent;
+    transform: translate3d(0, 0, 0);
+}
+
+.leaflet-tile {
+    image-rendering: auto;
+}
+
+.custom-pin-wrapper,
+.marker-cluster {
+    will-change: transform, opacity;
+}
+
 /* Base Filter Group styles */
 .filter-group {
     display: flex;
@@ -1360,13 +1384,36 @@ input:checked + .slider:before {
     }
 
     /* MOBILE FILTER BOTTOM SHEET MODAL */
-    /* By default: completely hidden (display: none !important) so it NEVER blocks floating buttons */
-    .filter-bar {
+    /* Strict complete hiding by default: zero pixels rendered, zero events */
+    #filter-bar,
+    .filter-bar,
+    #filter-bar:not(.active),
+    .filter-bar:not(.active) {
         display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: translateY(200%) !important;
+        height: 0 !important;
+        max-height: 0 !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    #filter-bar.active,
+    .filter-bar.active {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
         position: fixed !important;
         inset: 0 !important;
         width: 100vw !important;
         height: 100vh !important;
+        max-height: 100vh !important;
         z-index: 3000 !important;
         background: rgba(0, 0, 0, 0.65) !important;
         backdrop-filter: blur(4px) !important;
@@ -1375,10 +1422,7 @@ input:checked + .slider:before {
         padding: 0 !important;
         border: none !important;
         box-shadow: none !important;
-    }
-
-    .filter-bar.active {
-        display: flex !important;
+        transform: none !important;
     }
 
     .filter-bar-sheet {

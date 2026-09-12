@@ -117,6 +117,8 @@ async function sha256(str) {
 
 // Load Official India Borders (Survey of India / OpenStreetMap India osm-in.github.io compliance)
 async function loadIndiaBoundaries() {
+    const canvasRenderer = L.canvas();
+
     try {
         // 1. Mask disputed lines that standard OSM tiles render incorrectly
         const dispRes = await fetch('./data/osm-india-disputed-lines.geojson');
@@ -125,6 +127,7 @@ async function loadIndiaBoundaries() {
             
             // Mask layer: covers disputed/dashed internal lines with land background color
             L.geoJSON(dispData, {
+                renderer: canvasRenderer,
                 filter: (feature) => feature.properties && feature.properties.disputed_by === 'IN',
                 style: {
                     color: '#f2efe9',
@@ -136,6 +139,7 @@ async function loadIndiaBoundaries() {
 
             // Claimed boundary lines: renders official sovereign boundaries of India (J&K, Ladakh, Arunachal)
             L.geoJSON(dispData, {
+                renderer: canvasRenderer,
                 filter: (feature) => feature.properties && feature.properties.claimed_by === 'IN',
                 style: {
                     color: '#1e293b',
@@ -155,6 +159,7 @@ async function loadIndiaBoundaries() {
         if (bndRes.ok) {
             const bndData = await bndRes.json();
             L.geoJSON(bndData, {
+                renderer: canvasRenderer,
                 style: {
                     color: '#0f172a',
                     weight: 2,
@@ -169,14 +174,23 @@ async function loadIndiaBoundaries() {
     }
 }
 
-// Initialize Leaflet Map (with OpenStreetMap India boundaries compliance)
+// Initialize Leaflet Map (with OpenStreetMap India boundaries compliance & smooth zooming)
 function initMap() {
     map = L.map('map', {
         center: [22.8, 80.0], // Geographic center of India
         zoom: 5,
         minZoom: 4,
         maxZoom: 18,
-        zoomControl: false
+        zoomControl: false,
+        preferCanvas: true,            // GPU canvas rendering for vector layers (eliminates choppy SVG re-rendering)
+        zoomAnimation: true,           // Smooth zoom animation
+        zoomAnimationThreshold: 8,     // Animate zooms even when jumping multiple zoom levels
+        fadeAnimation: true,           // Smooth tile fading
+        markerZoomAnimation: true,     // Smooth pin repositioning during zoom
+        zoomSnap: 0.5,                 // Finer fractional zoom levels instead of jarring integer jumps
+        zoomDelta: 0.5,                // Gentle zoom steps for buttons & gestures
+        wheelPxPerZoomLevel: 120,      // Smooth mousewheel zooming
+        wheelDebounceTime: 40          // Throttle wheel zoom events
     });
 
     // Clean top-right zoom control
@@ -185,7 +199,10 @@ function initMap() {
     // Open-source base tiles with OpenStreetMap India attribution
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Borders as per <a href="https://osm-in.github.io" target="_blank">OpenStreetMap India / Survey of India</a>',
-        maxZoom: 19
+        maxZoom: 19,
+        updateWhenZooming: false,      // Don't thrash network during zoom animation; keep current tiles stretched
+        updateWhenIdle: true,          // Fetch new tiles only when pan/zoom settles
+        keepBuffer: 4                  // Keep off-screen tiles in memory for seamless panning & zooming
     }).addTo(map);
 
     // Apply official boundaries compliance
@@ -194,7 +211,13 @@ function initMap() {
     markersGroup = L.markerClusterGroup({
         showCoverageOnHover: false,
         maxClusterRadius: 40,
-        spiderfyOnMaxZoom: true
+        spiderfyOnMaxZoom: true,
+        animate: true,
+        animateAddingMarkers: false,
+        chunkedLoading: true,
+        chunkInterval: 100,
+        chunkDelay: 25,
+        disableClusteringAtZoom: 16
     });
     map.addLayer(markersGroup);
 }
