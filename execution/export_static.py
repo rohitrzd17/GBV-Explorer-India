@@ -42,8 +42,8 @@ def export_static_data():
     # 3. Write CSV file
     csv_file = os.path.join(WEB_DATA_DIR, "incidents.csv")
     csv_columns = [
-        "id", "title", "category", "incident_date", "location_name",
-        "district", "state", "latitude", "longitude", "legal_status",
+        "id", "title", "category", "incident_date", "oldest_article_date", "latest_article_date",
+        "location_name", "district", "state", "latitude", "longitude", "legal_status",
         "source_count", "publishers", "primary_url", "summary"
     ]
 

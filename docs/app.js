@@ -21,7 +21,26 @@ function cleanHtmlText(text) {
     tempDiv.innerHTML = text;
     let clean = tempDiv.textContent || tempDiv.innerText || '';
     clean = clean.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    clean = clean.replace(/\ufffd/g, "'");
     return clean;
+}
+
+// Utility: Format ISO or standard date strings into DD-MM-YYYY
+function formatDateDDMMYYYY(dateStr) {
+    if (!dateStr || dateStr === 'null' || dateStr === 'None') return 'Not specified';
+    const str = String(dateStr).trim();
+    const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+        return `${match[3]}-${match[2]}-${match[1]}`;
+    }
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}-${month}-${year}`;
+    }
+    return str;
 }
 
 // Client-side Overrides for GitHub Pages (Offline / Static editing)
@@ -443,7 +462,7 @@ function renderMapMarkers() {
                     <span class="badge ${CATEGORY_BADGES[inc.category] || 'badge-other'}">${inc.category}</span>
                     <div class="popup-title">${escapeHtml(cleanHtmlText(inc.title))}</div>
                     <div class="popup-meta">
-                        <i class="fa-solid fa-location-dot"></i> ${escapeHtml(inc.district || inc.location_name || inc.state || 'India')} &bull; ${inc.incident_date || 'Recent'}
+                        <i class="fa-solid fa-location-dot"></i> ${escapeHtml(inc.district || inc.location_name || inc.state || 'India')} &bull; ${formatDateDDMMYYYY(inc.incident_date)}
                     </div>
                     <button class="popup-btn" onclick="openModal(${inc.id})">Details & Sources (${inc.source_count || 1})</button>
                 </div>
@@ -710,7 +729,7 @@ function renderIncidentList() {
             </div>
             <div class="incident-card-meta">
                 <span><i class="fa-solid fa-location-dot"></i> ${escapeHtml(inc.district || inc.location_name || inc.state || 'India')}</span>
-                <span><i class="fa-solid fa-calendar"></i> ${inc.incident_date || 'Recent'}</span>
+                <span><i class="fa-solid fa-calendar"></i> ${formatDateDDMMYYYY(inc.incident_date)}</span>
                 <span><i class="fa-solid fa-newspaper"></i> ${inc.source_count || 1} report(s)</span>
             </div>
         `;
@@ -743,65 +762,143 @@ async function openModal(incidentId) {
     badge.className = `badge ${CATEGORY_BADGES[inc.category] || 'badge-other'}`;
     badge.textContent = inc.category;
 
-    document.getElementById('modal-date').textContent = inc.incident_date || 'Not specified';
+    // Date in DD-MM-YYYY format
+    document.getElementById('modal-date').textContent = formatDateDDMMYYYY(inc.incident_date);
+
+    // Location & Status
     document.getElementById('modal-location').textContent = `${inc.district || inc.location_name || 'Unspecified'}, ${inc.state || 'India'}`;
     document.getElementById('modal-status').textContent = inc.legal_status || 'Under Investigation';
-    document.getElementById('modal-summary').textContent = cleanHtmlText(inc.summary || inc.title);
 
     const sourcesContainer = document.getElementById('modal-sources-list');
-    sourcesContainer.innerHTML = '<div style="color: var(--text-muted);">Loading verified sources...</div>';
+    const countBadge = document.getElementById('modal-source-count-badge');
+    const oldestDateEl = document.getElementById('modal-oldest-date');
+    const latestDateEl = document.getElementById('modal-latest-date');
+
+    // Default dates from incident fields if available
+    let oldestDate = inc.oldest_article_date || inc.incident_date;
+    let latestDate = inc.latest_article_date || inc.incident_date;
+
+    if (oldestDateEl) oldestDateEl.textContent = formatDateDDMMYYYY(oldestDate);
+    if (latestDateEl) latestDateEl.textContent = formatDateDDMMYYYY(latestDate);
 
     document.getElementById('incident-modal').classList.add('active');
 
-    try {
-        const res = await fetch(`/api/incidents/${incidentId}/sources`);
-        const data = await res.json();
-        const sources = data.sources || [];
+    // Function to render verified sources list with hyperlinks for every individual source
+    function renderSources(sourcesList) {
         sourcesContainer.innerHTML = '';
+        const list = Array.isArray(sourcesList) ? sourcesList : [];
 
-        if (sources.length === 0) {
-            // Fallback for static mode using primary_url
+        if (list.length === 0) {
+            // Fallback to primary_url if available
             if (inc.primary_url) {
-                sourcesContainer.innerHTML = `
-                    <div class="source-item">
-                        <div>
-                            <div style="font-size: 0.85rem; font-weight: 600;">${escapeHtml(cleanHtmlText(inc.title))}</div>
-                            <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(cleanHtmlText(inc.publishers || 'News Outlet'))}</div>
-                        </div>
-                        <a href="${inc.primary_url}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i> Read Article</a>
-                    </div>
-                `;
-            } else {
-                sourcesContainer.innerHTML = '<div style="color: var(--text-muted);">No external links recorded.</div>';
-            }
-        } else {
-            sources.forEach(src => {
+                if (countBadge) countBadge.textContent = '1 source';
                 const item = document.createElement('div');
                 item.className = 'source-item';
+                item.setAttribute('role', 'button');
+                item.onclick = (e) => {
+                    if (e.target.tagName.toLowerCase() === 'a' || e.target.closest('a')) return;
+                    window.open(inc.primary_url, '_blank', 'noopener,noreferrer');
+                };
+
                 item.innerHTML = `
-                    <div>
-                        <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 2px;">${escapeHtml(cleanHtmlText(src.headline))}</div>
-                        <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(cleanHtmlText(src.publisher || 'Media Outlet'))} &bull; ${src.published_at ? src.published_at.slice(0, 10) : ''}</div>
+                    <div class="source-info">
+                        <a href="${inc.primary_url}" target="_blank" rel="noopener noreferrer" class="source-headline-link" title="Open article in new tab">
+                            ${escapeHtml(cleanHtmlText(inc.title))}
+                        </a>
+                        <div class="source-meta">
+                            <a href="${inc.primary_url}" target="_blank" rel="noopener noreferrer" class="source-publisher-badge" title="Visit source">
+                                <i class="fa-regular fa-newspaper"></i> ${escapeHtml(cleanHtmlText(inc.publishers || 'News Outlet'))}
+                            </a>
+                            ${inc.incident_date ? `<span class="source-meta-dot">&bull;</span> <span class="source-date"><i class="fa-regular fa-calendar"></i> ${formatDateDDMMYYYY(inc.incident_date)}</span>` : ''}
+                        </div>
                     </div>
-                    <a href="${src.url}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i> Read Article</a>
+                    <a href="${inc.primary_url}" target="_blank" rel="noopener noreferrer" class="source-action-btn" title="Read full article">
+                        <span>Read Article</span> <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </a>
                 `;
                 sourcesContainer.appendChild(item);
-            });
+            } else {
+                if (countBadge) countBadge.textContent = '0 sources';
+                sourcesContainer.innerHTML = '<div style="color: var(--text-muted); padding: 8px 0;">No external links recorded.</div>';
+            }
+            return;
+        }
+
+        // Sort sources by published date ascending
+        const sorted = [...list].sort((a, b) => {
+            const da = a.published_at || '';
+            const db = b.published_at || '';
+            return da.localeCompare(db);
+        });
+
+        // Compute oldest and latest article dates from actual sources list
+        const validDates = sorted.map(s => s.published_at).filter(Boolean);
+        if (validDates.length > 0) {
+            oldestDate = validDates[0];
+            latestDate = validDates[validDates.length - 1];
+        }
+        if (oldestDateEl) oldestDateEl.textContent = formatDateDDMMYYYY(oldestDate);
+        if (latestDateEl) latestDateEl.textContent = formatDateDDMMYYYY(latestDate);
+
+        if (countBadge) countBadge.textContent = `${sorted.length} source${sorted.length === 1 ? '' : 's'}`;
+
+        sorted.forEach(src => {
+            const item = document.createElement('div');
+            item.className = 'source-item';
+            const headline = cleanHtmlText(src.headline || inc.title);
+            const publisher = cleanHtmlText(src.publisher || 'Media Outlet');
+            const pubDate = src.published_at ? formatDateDDMMYYYY(src.published_at) : '';
+            const url = src.url || inc.primary_url || '#';
+
+            item.setAttribute('role', 'button');
+            item.onclick = (e) => {
+                if (e.target.tagName.toLowerCase() === 'a' || e.target.closest('a')) return;
+                if (url && url !== '#') {
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                }
+            };
+
+            item.innerHTML = `
+                <div class="source-info">
+                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="source-headline-link" title="Open article in new tab">
+                        ${escapeHtml(headline)}
+                    </a>
+                    <div class="source-meta">
+                        <a href="${url}" target="_blank" rel="noopener noreferrer" class="source-publisher-badge" title="Visit source">
+                            <i class="fa-regular fa-newspaper"></i> ${escapeHtml(publisher)}
+                        </a>
+                        ${pubDate ? `<span class="source-meta-dot">&bull;</span> <span class="source-date"><i class="fa-regular fa-calendar"></i> ${pubDate}</span>` : ''}
+                    </div>
+                </div>
+                <a href="${url}" target="_blank" rel="noopener noreferrer" class="source-action-btn" title="Read full article">
+                    <span>Read Article</span> <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </a>
+            `;
+            sourcesContainer.appendChild(item);
+        });
+    }
+
+    // Fast path: if incident already has sources populated (from static export or previous fetch)
+    if (inc.sources && Array.isArray(inc.sources) && inc.sources.length > 0) {
+        renderSources(inc.sources);
+        return;
+    }
+
+    // Otherwise show loading and attempt fetch from dynamic API
+    sourcesContainer.innerHTML = '<div style="color: var(--text-muted); padding: 8px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Loading verified sources...</div>';
+
+    try {
+        const res = await fetch(`/api/incidents/${incidentId}/sources`);
+        if (res.ok) {
+            const data = await res.json();
+            const sources = data.sources || [];
+            inc.sources = sources; // Cache locally on incident
+            renderSources(sources);
+        } else {
+            renderSources([]);
         }
     } catch (err) {
-        if (inc.primary_url) {
-            sourcesContainer.innerHTML = `
-                <div class="source-item">
-                    <div>
-                        <div style="font-size: 0.85rem; font-weight: 600;">${escapeHtml(cleanHtmlText(inc.title))}</div>
-                        <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(cleanHtmlText(inc.publishers || 'News Outlet'))}</div>
-                    </div>
-                    <a href="${inc.primary_url}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i> Read Article</a>
-                </div>
-            `;
-        } else {
-            sourcesContainer.innerHTML = '<div style="color: var(--text-muted);">No external links recorded.</div>';
-        }
+        renderSources([]);
     }
 }
 

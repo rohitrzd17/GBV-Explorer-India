@@ -208,7 +208,8 @@ def get_all_incidents(
     state: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    only_geocoded: bool = False
+    only_geocoded: bool = False,
+    include_sources: bool = True
 ) -> List[Dict[str, Any]]:
     conn = get_connection()
     cursor = conn.cursor()
@@ -240,7 +241,48 @@ def get_all_incidents(
 
         query += " ORDER BY i.incident_date DESC, i.id DESC"
         cursor.execute(query, params)
-        return [dict(row) for row in cursor.fetchall()]
+        incidents = [dict(row) for row in cursor.fetchall()]
+
+        if include_sources:
+            cursor.execute("""
+                SELECT incident_id, headline, publisher, url, published_at 
+                FROM sources 
+                WHERE incident_id IS NOT NULL 
+                ORDER BY published_at ASC
+            """)
+            sources_by_inc: Dict[int, List[Dict[str, Any]]] = {}
+            for s_row in cursor.fetchall():
+                i_id = s_row["incident_id"]
+                if i_id not in sources_by_inc:
+                    sources_by_inc[i_id] = []
+                hl = s_row["headline"] or ""
+                hl = hl.replace("\ufffd", "'")
+                sources_by_inc[i_id].append({
+                    "headline": hl,
+                    "publisher": s_row["publisher"] or "News Outlet",
+                    "url": s_row["url"] or "",
+                    "published_at": s_row["published_at"] or ""
+                })
+
+            for inc in incidents:
+                if inc.get("title"):
+                    inc["title"] = inc["title"].replace("\ufffd", "'")
+                if inc.get("summary"):
+                    inc["summary"] = inc["summary"].replace("\ufffd", "'")
+
+                inc_sources = sources_by_inc.get(inc["id"], [])
+                inc["sources"] = inc_sources
+
+                # Calculate oldest and latest article dates
+                valid_dates = [s["published_at"][:10] for s in inc_sources if s.get("published_at")]
+                if valid_dates:
+                    inc["oldest_article_date"] = min(valid_dates)
+                    inc["latest_article_date"] = max(valid_dates)
+                else:
+                    inc["oldest_article_date"] = inc.get("incident_date")
+                    inc["latest_article_date"] = inc.get("incident_date")
+
+        return incidents
     finally:
         conn.close()
 

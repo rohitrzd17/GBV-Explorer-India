@@ -522,53 +522,210 @@ body {
     box-sizing: border-box;
 }
 
-.modal-summary-text {
-    font-size: 0.88rem;
-    line-height: 1.6;
-    color: var(--text-main);
+/* Modal Metadata Grid */
+.modal-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px 18px;
+    margin-bottom: 16px;
+    font-size: 0.86rem;
+}
+
+@media (max-width: 600px) {
+    .modal-meta-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+
+.modal-meta-grid .meta-item {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
     word-break: break-word;
-    overflow-wrap: anywhere;
-    hyphens: auto;
-    white-space: pre-wrap;
-    max-width: 100%;
+    color: var(--text-muted);
+}
+
+.modal-meta-grid .meta-item strong {
+    color: #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+}
+
+.modal-meta-grid .meta-item strong i {
+    color: #60a5fa;
+    font-size: 0.85rem;
+}
+
+.modal-meta-grid .meta-item span {
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.modal-divider {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin: 16px 0;
+}
+
+.sources-header-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 12px;
 }
 
+.sources-header-wrap h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sources-header-wrap h4 i {
+    color: #38bdf8;
+}
+
+.source-count-badge {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    border-radius: 9999px;
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    font-weight: 600;
+}
+
+/* Verified Sources List & Individual Source Items */
 .sources-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
     max-width: 100%;
     overflow-x: hidden;
     box-sizing: border-box;
 }
 
 .source-item {
-    background: var(--bg-main);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 8px 12px;
+    background: rgba(30, 41, 59, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 8px;
+    padding: 10px 14px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
+    gap: 14px;
     word-break: break-word;
     overflow-wrap: anywhere;
     max-width: 100%;
     box-sizing: border-box;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.source-item > div {
+.source-item:hover {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(56, 189, 248, 0.35);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.source-item .source-info {
     min-width: 0;
     flex: 1;
 }
 
-.source-item a {
-    flex-shrink: 0;
-    font-size: 0.75rem;
-    color: var(--accent);
+.source-headline-link {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #f8fafc;
+    text-decoration: none;
+    line-height: 1.35;
+    margin-bottom: 5px;
+    transition: color 0.15s ease;
+}
+
+.source-headline-link:hover {
+    color: #38bdf8;
+    text-decoration: underline;
+}
+
+.source-meta {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+}
+
+.source-publisher-badge {
+    color: #94a3b8;
     text-decoration: none;
     font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.15s ease;
+}
+
+.source-publisher-badge:hover {
+    color: #38bdf8;
+    text-decoration: underline;
+}
+
+.source-meta-dot {
+    color: #64748b;
+    font-size: 0.65rem;
+}
+
+.source-date {
+    color: #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.source-action-btn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 7px 12px;
+    border-radius: 6px;
+    background: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.source-action-btn:hover {
+    background: #0284c7;
+    color: #ffffff;
+    border-color: #0284c7;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+}
+
+@media (max-width: 600px) {
+    .source-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .source-action-btn {
+        align-self: flex-end;
+    }
 }
 
 /* Admin Modal Specifics */

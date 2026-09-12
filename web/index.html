@@ -18,7 +18,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./style.css?v=20260912_8">
+    <link rel="stylesheet" href="./style.css?v=20260913_1">
 </head>
 <body>
     <!-- Top Navigation Bar -->
@@ -287,15 +287,17 @@
             </div>
             <div class="modal-body">
                 <div class="modal-meta-grid">
-                    <div><strong><i class="fa-solid fa-calendar"></i> Date:</strong> <span id="modal-date">-</span></div>
-                    <div><strong><i class="fa-solid fa-location-dot"></i> Location:</strong> <span id="modal-location">-</span></div>
-                    <div><strong><i class="fa-solid fa-scale-balanced"></i> Status:</strong> <span id="modal-status">-</span></div>
+                    <div class="meta-item"><strong><i class="fa-solid fa-calendar-day"></i> Date:</strong> <span id="modal-date">-</span></div>
+                    <div class="meta-item"><strong><i class="fa-solid fa-clock-rotate-left"></i> Oldest Article Date:</strong> <span id="modal-oldest-date">-</span></div>
+                    <div class="meta-item"><strong><i class="fa-solid fa-clock"></i> Latest Article Date:</strong> <span id="modal-latest-date">-</span></div>
+                    <div class="meta-item"><strong><i class="fa-solid fa-location-dot"></i> Location:</strong> <span id="modal-location">-</span></div>
+                    <div class="meta-item"><strong><i class="fa-solid fa-scale-balanced"></i> Status:</strong> <span id="modal-status">-</span></div>
                 </div>
-                <hr>
-                <h4>Summary</h4>
-                <p id="modal-summary" class="modal-summary-text"></p>
-                <hr>
-                <h4>Verified Media Sources & Coverage</h4>
+                <hr class="modal-divider">
+                <div class="sources-header-wrap">
+                    <h4><i class="fa-solid fa-newspaper"></i> Verified Media Sources & Coverage</h4>
+                    <span id="modal-source-count-badge" class="source-count-badge">0 sources</span>
+                </div>
                 <div id="modal-sources-list" class="sources-list">
                     <!-- Source items dynamically injected here -->
                 </div>
@@ -659,6 +661,6 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- html2canvas for IIPMaps-style high-res map image export -->
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="./app.js?v=20260912_9"></script>
+    <script src="./app.js?v=20260913_1"></script>
 </body>
 </html>
