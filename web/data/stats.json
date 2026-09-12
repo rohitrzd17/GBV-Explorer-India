@@ -1,26 +1,26 @@
 {
-  "total_incidents": 1984,
-  "geocoded_incidents": 1372,
-  "total_sources": 3696,
+  "total_incidents": 2171,
+  "geocoded_incidents": 1499,
+  "total_sources": 4014,
   "categories": {
-    "Sexual Assault": 865,
-    "POCSO / Minor": 462,
-    "Other GBV": 275,
-    "Domestic Violence": 154,
-    "Dowry Violence": 148,
-    "Harassment & Stalking": 55,
+    "Sexual Assault": 989,
+    "POCSO / Minor": 492,
+    "Other GBV": 304,
+    "Domestic Violence": 161,
+    "Dowry Violence": 146,
+    "Harassment & Stalking": 54,
     "Acid Attack": 25
   },
   "top_states": {
-    "Delhi": 166,
-    "Uttar Pradesh": 137,
-    "Maharashtra": 135,
-    "Tamil Nadu": 121,
-    "Karnataka": 109,
-    "West Bengal": 98,
-    "Telangana": 97,
-    "Kerala": 64,
-    "Rajasthan": 57,
-    "Madhya Pradesh": 50
+    "Uttar Pradesh": 167,
+    "Maharashtra": 149,
+    "Delhi": 131,
+    "Tamil Nadu": 119,
+    "Telangana": 106,
+    "Karnataka": 103,
+    "West Bengal": 89,
+    "Kerala": 69,
+    "Odisha": 68,
+    "Madhya Pradesh": 65
   }
 }

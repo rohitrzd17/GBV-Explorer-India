@@ -1034,7 +1034,7 @@ function exportCSV() {
     }
 
     const headers = [
-        "Incident ID", "Title", "Category", "Incident Date", "Location",
+        "Title", "Category", "Incident Date", "Location",
         "District", "State", "Latitude", "Longitude", "Legal Status",
         "Source Count", "Publishers", "Primary URL", "Summary"
     ];
@@ -1050,7 +1050,6 @@ function exportCSV() {
 
     listToExport.forEach(inc => {
         const row = [
-            escapeCsvField(inc.id),
             escapeCsvField(inc.title),
             escapeCsvField(inc.category),
             escapeCsvField(inc.incident_date),
@@ -1093,9 +1092,8 @@ function exportXLSX() {
         return;
     }
 
-    // 1. Incidents dataset sheet
+    // 1. Incidents dataset sheet (without internal tracking ID)
     const incidentRows = listToExport.map(inc => ({
-        "Incident ID": inc.id,
         "Title": cleanHtmlText(inc.title),
         "Category": inc.category,
         "Incident Date": inc.incident_date || '',

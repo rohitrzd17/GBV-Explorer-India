@@ -8,7 +8,7 @@
       "region": "India",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:08",
       "created_at": "2026-09-12 10:34:55",
       "feed_type": "google_news",
       "constraints": "gbv_strict"
@@ -20,7 +20,7 @@
       "region": "Delhi NCR",
       "category_hint": "Harassment & Stalking",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:09",
       "created_at": "2026-09-12 10:34:55",
       "feed_type": "google_news",
       "constraints": "gbv_strict"
@@ -32,7 +32,7 @@
       "region": "Uttar Pradesh",
       "category_hint": "Sexual Assault",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:11",
       "created_at": "2026-09-12 10:34:55",
       "feed_type": "google_news",
       "constraints": "gbv_strict"
@@ -44,7 +44,7 @@
       "region": "Maharashtra",
       "category_hint": "Sexual Assault",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:12",
       "created_at": "2026-09-12 10:34:55",
       "feed_type": "google_news",
       "constraints": "gbv_strict"
@@ -56,7 +56,7 @@
       "region": "West Bengal",
       "category_hint": "Sexual Assault",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:13",
       "created_at": "2026-09-12 10:34:55",
       "feed_type": "google_news",
       "constraints": "gbv_strict"
@@ -68,7 +68,7 @@
       "region": "South India",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:15",
       "created_at": "2026-09-12 10:34:55",
       "feed_type": "google_news",
       "constraints": "gbv_strict"
@@ -80,7 +80,7 @@
       "region": "India",
       "category_hint": "POCSO / Minor",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:16",
       "created_at": "2026-09-12 10:34:55",
       "feed_type": "google_news",
       "constraints": "gbv_strict"
@@ -92,7 +92,7 @@
       "region": "India",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": "2026-09-12 11:23:58",
+      "last_fetched_at": "2026-09-12 19:53:16",
       "created_at": "2026-09-12 11:22:02",
       "feed_type": "rss_url",
       "constraints": "gbv_strict"
@@ -104,7 +104,7 @@
       "region": "India",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": "2026-09-12 11:23:58",
+      "last_fetched_at": "2026-09-12 19:53:17",
       "created_at": "2026-09-12 11:22:02",
       "feed_type": "rss_url",
       "constraints": "gbv_strict"
@@ -116,7 +116,7 @@
       "region": "India",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:18",
       "created_at": "2026-09-12 11:22:02",
       "feed_type": "rss_url",
       "constraints": "gbv_strict"
@@ -128,7 +128,7 @@
       "region": "India",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:19",
       "created_at": "2026-09-12 11:22:02",
       "feed_type": "rss_url",
       "constraints": "gbv_strict"
@@ -140,7 +140,7 @@
       "region": "India",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:19",
       "created_at": "2026-09-12 11:22:02",
       "feed_type": "rss_url",
       "constraints": "gbv_strict"
@@ -152,7 +152,7 @@
       "region": "South India",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:22",
       "created_at": "2026-09-12 11:22:02",
       "feed_type": "rss_url",
       "constraints": "gbv_strict"
@@ -164,7 +164,7 @@
       "region": "India",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:22",
       "created_at": "2026-09-12 11:22:02",
       "feed_type": "rss_url",
       "constraints": "gbv_strict"
@@ -176,7 +176,7 @@
       "region": "India",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:24",
       "created_at": "2026-09-12 11:22:02",
       "feed_type": "rss_url",
       "constraints": "gbv_strict"
@@ -188,7 +188,7 @@
       "region": "Odisha",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:24",
       "created_at": "2026-09-12 11:22:02",
       "feed_type": "rss_url",
       "constraints": "gbv_strict"
@@ -200,7 +200,7 @@
       "region": "Telangana",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:27",
       "created_at": "2026-09-12 11:22:02",
       "feed_type": "rss_url",
       "constraints": "gbv_strict"
@@ -212,7 +212,7 @@
       "region": "North East",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:29",
       "created_at": "2026-09-12 11:22:02",
       "feed_type": "rss_url",
       "constraints": "gbv_strict"
@@ -224,7 +224,7 @@
       "region": "Karnataka",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:30",
       "created_at": "2026-09-12 11:22:02",
       "feed_type": "rss_url",
       "constraints": "gbv_strict"
@@ -236,7 +236,7 @@
       "region": "Himachal Pradesh",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:31",
       "created_at": "2026-09-12 11:22:02",
       "feed_type": "rss_url",
       "constraints": "gbv_strict"
@@ -248,7 +248,7 @@
       "region": "Punjab & Haryana",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:32",
       "created_at": "2026-09-12 11:22:02",
       "feed_type": "rss_url",
       "constraints": "gbv_strict"
@@ -260,7 +260,7 @@
       "region": "Telangana",
       "category_hint": "All",
       "is_active": 1,
-      "last_fetched_at": null,
+      "last_fetched_at": "2026-09-12 19:53:34",
       "created_at": "2026-09-12 11:22:02",
       "feed_type": "rss_url",
       "constraints": "gbv_strict"
