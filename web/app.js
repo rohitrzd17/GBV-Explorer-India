@@ -10,7 +10,7 @@ let isStaticMode = false;
 let isAdminAuthenticated = false; // In-memory only: resets on page refresh
 
 // IIPMaps-inspired Choropleth & Spatial State Variables
-let currentLayerMode = 'clusters'; // 'clusters' | 'choropleth' | 'hybrid'
+let currentLayerMode = 'choropleth'; // 'choropleth' (default) | 'clusters' | 'hybrid'
 let stateBoundariesGeoJSON = null;
 let choroplethLayer = null;
 
@@ -244,7 +244,9 @@ function initMap() {
         chunkDelay: 25,
         disableClusteringAtZoom: 16
     });
-    map.addLayer(markersGroup);
+    if (currentLayerMode === 'clusters' || currentLayerMode === 'hybrid') {
+        map.addLayer(markersGroup);
+    }
 
     // Click outside in blank area (ocean, neighboring countries, non-state areas) resets to whole country view
     map.on('click', (e) => {
@@ -441,9 +443,60 @@ function applyFilters() {
         return true;
     });
 
+    updateFilterMatchDisplay(filteredIncidents.length, categoryVal, stateVal, timeVal, searchVal);
     renderMapMarkers();
     renderIncidentList();
     renderChoroplethLayer();
+}
+
+// Update dynamic match counter badge & tooltips based on active filters (e.g. Acid Attacks in Maharashtra in last 7 days)
+function updateFilterMatchDisplay(count, categoryVal, stateVal, timeVal, searchVal) {
+    const countEl = document.getElementById('filter-match-count');
+    const textEl = document.getElementById('filter-match-text');
+    const pillEl = document.getElementById('filter-count-pill');
+    const mobileCountEl = document.getElementById('mobile-filter-match-count');
+    const sheetCountEl = document.getElementById('filter-sheet-match-count');
+
+    const formattedCount = Number(count).toLocaleString();
+    if (countEl) countEl.textContent = formattedCount;
+    if (mobileCountEl) mobileCountEl.textContent = formattedCount;
+    if (sheetCountEl) sheetCountEl.textContent = formattedCount;
+
+    const timeLabels = {
+        '7d': 'in last 7 days',
+        '30d': 'in last 30 days',
+        '60d': 'in last 60 days',
+        '90d': 'in last 90 days',
+        '180d': 'in last 6 months',
+        'all': 'across all time'
+    };
+    const timeLabel = timeLabels[timeVal] || '';
+
+    const catLabel = (categoryVal && categoryVal !== 'All') ? categoryVal : 'GBV';
+    const stateLabel = (stateVal && stateVal !== 'All') ? `in ${stateVal}` : 'in India';
+    const searchLabel = searchVal ? `matching "${searchVal}"` : '';
+
+    const parts = [
+        `Total number of ${catLabel} reports`,
+        stateLabel,
+        timeLabel,
+        searchLabel
+    ].filter(Boolean);
+
+    const descText = `${parts.join(' ')}: ${formattedCount}`;
+
+    if (pillEl) {
+        pillEl.setAttribute('title', descText);
+        const hasActiveFilter = (categoryVal && categoryVal !== 'All') ||
+                                (stateVal && stateVal !== 'All') ||
+                                (timeVal && timeVal !== '180d' && timeVal !== 'all') ||
+                                Boolean(searchVal);
+        pillEl.classList.toggle('filter-active', Boolean(hasActiveFilter));
+    }
+
+    if (textEl) {
+        textEl.textContent = count === 1 ? 'Report' : 'Reports';
+    }
 }
 
 // Render Leaflet Markers
@@ -659,22 +712,16 @@ function renderChoroplethLayer() {
                     L.DomEvent.stopPropagation(e);
                     if (tooltipEl) tooltipEl.classList.add('hidden');
 
-                    const stateSelect = document.getElementById('filter-state');
-                    const currentState = stateSelect ? stateSelect.value : 'All';
-
-                    // Toggle: clicking the currently highlighted state resets back to whole country
-                    if (normalizeStateName(currentState) === stName || currentState === feature.properties.st_nm) {
-                        resetToWholeCountryView();
-                        return;
-                    }
-
                     map.fitBounds(e.target.getBounds(), { padding: [30, 30], maxZoom: 8 });
 
+                    const stateSelect = document.getElementById('filter-state');
                     if (stateSelect) {
                         for (let opt of stateSelect.options) {
                             if (normalizeStateName(opt.value) === stName || opt.value === feature.properties.st_nm) {
-                                stateSelect.value = opt.value;
-                                applyFilters();
+                                if (stateSelect.value !== opt.value) {
+                                    stateSelect.value = opt.value;
+                                    applyFilters();
+                                }
                                 break;
                             }
                         }

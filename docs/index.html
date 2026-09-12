@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -19,7 +19,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="./favicon.svg">
-    <link rel="stylesheet" href="./style.css?v=20260913_2">
+    <link rel="stylesheet" href="./style.css?v=20260913_3">
 </head>
 <body>
     <!-- Top Navigation Bar -->
@@ -74,10 +74,10 @@
         <div class="header-actions">
             <!-- IIPMaps-style Map Layer Mode Switcher -->
             <div class="layer-switcher-pill" title="Toggle Map Layer View">
-                <button type="button" class="layer-btn active" data-mode="clusters" id="btn-mode-clusters" title="Pin Clusters View">
+                <button type="button" class="layer-btn" data-mode="clusters" id="btn-mode-clusters" title="Pin Clusters View">
                     <i class="fa-solid fa-location-dot"></i> <span>Clusters</span>
                 </button>
-                <button type="button" class="layer-btn" data-mode="choropleth" id="btn-mode-choropleth" title="Thematic State Choropleth Heatmap">
+                <button type="button" class="layer-btn active" data-mode="choropleth" id="btn-mode-choropleth" title="Thematic State Choropleth Heatmap">
                     <i class="fa-solid fa-chart-area"></i> <span>Choropleth</span>
                 </button>
                 <button type="button" class="layer-btn" data-mode="hybrid" id="btn-mode-hybrid" title="Hybrid Overlaid View">
@@ -146,8 +146,8 @@
             <div class="mobile-menu-section">
                 <label class="mobile-section-label"><i class="fa-solid fa-layer-group"></i> Map Layer View</label>
                 <div class="mobile-layer-switcher">
-                    <button type="button" class="mobile-layer-btn active" data-mode="clusters">Clusters</button>
-                    <button type="button" class="mobile-layer-btn" data-mode="choropleth">Choropleth</button>
+                    <button type="button" class="mobile-layer-btn" data-mode="clusters">Clusters</button>
+                    <button type="button" class="mobile-layer-btn active" data-mode="choropleth">Choropleth</button>
                     <button type="button" class="mobile-layer-btn" data-mode="hybrid">Hybrid</button>
                 </div>
             </div>
@@ -171,7 +171,7 @@
             <div class="filter-bar" id="filter-bar">
                 <div class="filter-bar-sheet">
                     <div class="filter-bar-header">
-                        <h4><i class="fa-solid fa-sliders"></i> Search & Filters</h4>
+                        <h4><i class="fa-solid fa-sliders"></i> Search & Filters (<span id="filter-sheet-match-count">-</span>)</h4>
                         <button id="close-filter-sheet-btn" class="btn-close-sm" type="button"><i class="fa-solid fa-xmark"></i></button>
                     </div>
 
@@ -213,6 +213,15 @@
                         </select>
                     </div>
 
+                    <!-- Dynamic Filter Match Counter Badge (e.g. 42 Reports in Maharashtra) -->
+                    <div class="filter-group filter-count-group" id="filter-count-group">
+                        <div class="filter-count-pill" id="filter-count-pill" title="Matching reports based on current filters">
+                            <i class="fa-solid fa-chart-simple"></i>
+                            <span class="count-number" id="filter-match-count">-</span>
+                            <span class="count-text" id="filter-match-text">Reports</span>
+                        </div>
+                    </div>
+
                     <div class="filter-group reset-btn-group">
                         <button id="reset-filters-btn" class="btn btn-ghost" title="Reset All Filters" type="button">
                             <i class="fa-solid fa-xmark"></i> Clear
@@ -220,7 +229,9 @@
                     </div>
 
                     <div class="filter-mobile-apply">
-                        <button id="apply-filters-btn" class="btn btn-primary btn-block" type="button"><i class="fa-solid fa-check"></i> View Results</button>
+                        <button id="apply-filters-btn" class="btn btn-primary btn-block" type="button">
+                            <i class="fa-solid fa-check"></i> View <span id="mobile-filter-match-count">-</span> Results
+                        </button>
                     </div>
                 </div>
             </div>
@@ -684,6 +695,6 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- html2canvas for IIPMaps-style high-res map image export -->
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="./app.js?v=20260913_2"></script>
+    <script src="./app.js?v=20260913_3"></script>
 </body>
 </html>
