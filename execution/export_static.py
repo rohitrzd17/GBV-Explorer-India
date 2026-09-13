@@ -31,7 +31,7 @@ def export_static_data():
     # 2. Write JSON files for web consumption
     for dest_dir in [WEB_DATA_DIR, ROOT_DATA_DIR]:
         with open(os.path.join(dest_dir, "incidents.json"), "w", encoding="utf-8") as f:
-            json.dump({"count": len(incidents), "incidents": incidents}, f, indent=2)
+            json.dump({"count": len(incidents), "incidents": incidents}, f, separators=(',', ':'))
 
         with open(os.path.join(dest_dir, "stats.json"), "w", encoding="utf-8") as f:
             json.dump(stats, f, indent=2)

@@ -686,15 +686,10 @@
         </div>
     </div>
 
-    <!-- Leaflet JS & MarkerCluster -->
+    <!-- Leaflet JS & MarkerCluster (Core Map Engine) -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <!-- Turf.js for client-side spatial calculations & bounding (IIPMaps Stack) -->
-    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js"></script>
-    <!-- SheetJS for multi-sheet Excel (.xlsx) data export (IIPMaps Stack) -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- html2canvas for IIPMaps-style high-res map image export -->
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="./app.js?v=20260913_4"></script>
+    <!-- Note: SheetJS & html2canvas are dynamically lazy-loaded on-demand during export to save ~55MB RAM -->
+    <script src="./app.js?v=20260913_5"></script>
 </body>
 </html>

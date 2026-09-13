@@ -301,7 +301,7 @@ function initMap() {
         maxZoom: 19,
         updateWhenZooming: false,      // Don't thrash network during zoom animation; keep current tiles stretched
         updateWhenIdle: true,          // Fetch new tiles only when pan/zoom settles
-        keepBuffer: 4                  // Keep off-screen tiles in memory for seamless panning & zooming
+        keepBuffer: 1                  // Memory optimization: retain only 1 ring of buffer tiles (drastically cuts GPU/RAM raster cache)
     }).addTo(map);
 
     // Apply official boundaries compliance
@@ -579,6 +579,11 @@ function renderMapMarkers() {
     markersGroup.clearLayers();
     markerMap.clear();
 
+    // Memory optimization: in choropleth mode, avoid instantiating 1,500+ markers & popups
+    if (currentLayerMode === 'choropleth') {
+        return;
+    }
+
     filteredIncidents.forEach(inc => {
         if (inc.latitude && inc.longitude) {
             const marker = L.marker([inc.latitude, inc.longitude], {
@@ -824,24 +829,109 @@ function setLayerMode(mode) {
         btn.classList.toggle('active', btn.dataset.mode === mode);
     });
 
+    if (currentLayerMode !== 'choropleth') {
+        renderMapMarkers();
+    } else {
+        markersGroup.clearLayers();
+        markerMap.clear();
+    }
+
     renderChoroplethLayer();
 }
 
-// Render Side Drawer List
-function renderIncidentList() {
-    const listContainer = document.getElementById('incident-list');
-    document.getElementById('drawer-count').textContent = filteredIncidents.length;
-    if (document.getElementById('zoom-inc-badge')) {
-        document.getElementById('zoom-inc-badge').textContent = filteredIncidents.length;
+// Side Drawer Progressive Rendering State (Limits active DOM count from 13,000+ nodes to ~200 nodes)
+let drawerRenderedCount = 0;
+const DRAWER_CHUNK_SIZE = 40;
+let drawerNeedsUpdate = true;
+let isDrawerScrollBound = false;
+
+function openDrawer() {
+    const sideDrawer = document.getElementById('side-drawer');
+    const drawerBackdrop = document.getElementById('drawer-backdrop');
+    if (!sideDrawer) return;
+    sideDrawer.classList.remove('hidden');
+    sideDrawer.classList.add('active');
+    if (drawerBackdrop && window.innerWidth <= 820) {
+        drawerBackdrop.classList.add('active');
+    } else if (drawerBackdrop) {
+        drawerBackdrop.classList.remove('active');
     }
-    listContainer.innerHTML = '';
+    if (drawerNeedsUpdate) {
+        renderIncidentList(true);
+    }
+}
+
+function closeDrawer() {
+    const sideDrawer = document.getElementById('side-drawer');
+    const drawerBackdrop = document.getElementById('drawer-backdrop');
+    if (!sideDrawer) return;
+    sideDrawer.classList.add('hidden');
+    sideDrawer.classList.remove('active');
+    if (drawerBackdrop) {
+        drawerBackdrop.classList.remove('active');
+    }
+}
+
+function toggleDrawer() {
+    const sideDrawer = document.getElementById('side-drawer');
+    if (!sideDrawer) return;
+    if (sideDrawer.classList.contains('hidden') || !sideDrawer.classList.contains('active')) {
+        openDrawer();
+    } else {
+        closeDrawer();
+    }
+}
+
+// Render Side Drawer List (Progressive Chunking to minimize DOM memory footprint)
+function renderIncidentList(force = false) {
+    const listContainer = document.getElementById('incident-list');
+    const sideDrawer = document.getElementById('side-drawer');
+    const isDrawerVisible = sideDrawer && !sideDrawer.classList.contains('hidden');
+
+    const drawerCountEl = document.getElementById('drawer-count');
+    if (drawerCountEl) drawerCountEl.textContent = filteredIncidents.length;
+    const badgeEl = document.getElementById('zoom-inc-badge');
+    if (badgeEl) badgeEl.textContent = filteredIncidents.length;
+
+    if (!isDrawerVisible && !force) {
+        drawerNeedsUpdate = true;
+        return; // Defer DOM card creation until drawer is opened
+    }
+
+    drawerNeedsUpdate = false;
+    if (listContainer) listContainer.innerHTML = '';
+    drawerRenderedCount = 0;
 
     if (filteredIncidents.length === 0) {
-        listContainer.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">No incidents matching current filters.</div>';
+        if (listContainer) {
+            listContainer.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">No incidents matching current filters.</div>';
+        }
         return;
     }
 
-    filteredIncidents.forEach(inc => {
+    appendIncidentCardsChunk();
+
+    if (!isDrawerScrollBound && listContainer) {
+        listContainer.addEventListener('scroll', () => {
+            if (listContainer.scrollTop + listContainer.clientHeight >= listContainer.scrollHeight - 300) {
+                if (drawerRenderedCount < filteredIncidents.length) {
+                    appendIncidentCardsChunk();
+                }
+            }
+        }, { passive: true });
+        isDrawerScrollBound = true;
+    }
+}
+
+function appendIncidentCardsChunk() {
+    const listContainer = document.getElementById('incident-list');
+    if (!listContainer) return;
+
+    const nextBatch = filteredIncidents.slice(drawerRenderedCount, drawerRenderedCount + DRAWER_CHUNK_SIZE);
+    if (nextBatch.length === 0) return;
+
+    const fragment = document.createDocumentFragment();
+    nextBatch.forEach(inc => {
         const card = document.createElement('div');
         card.className = 'incident-card';
         card.innerHTML = `
@@ -865,13 +955,34 @@ function renderIncidentList() {
                 const marker = markerMap.get(inc.id);
                 if (marker) {
                     setTimeout(() => marker.openPopup(), 1300);
+                } else {
+                    // In choropleth mode where cluster markers aren't loaded, open single lightweight popup
+                    const popupHtml = `
+                        <div style="min-width: 190px;">
+                            <span class="badge ${CATEGORY_BADGES[inc.category] || 'badge-other'}">${inc.category}</span>
+                            <div class="popup-title">${escapeHtml(cleanHtmlText(inc.title))}</div>
+                            <div class="popup-meta">
+                                <i class="fa-solid fa-location-dot"></i> ${escapeHtml(inc.district || inc.location_name || inc.state || 'India')} &bull; ${formatDateDDMMYYYY(inc.incident_date)}
+                            </div>
+                            <button class="popup-btn" onclick="openModal(${inc.id})">Details & Sources (${inc.source_count || 1})</button>
+                        </div>
+                    `;
+                    setTimeout(() => {
+                        L.popup()
+                            .setLatLng([inc.latitude, inc.longitude])
+                            .setContent(popupHtml)
+                            .openOn(map);
+                    }, 1300);
                 }
             } else {
                 openModal(inc.id);
             }
         });
-        listContainer.appendChild(card);
+        fragment.appendChild(card);
     });
+
+    listContainer.appendChild(fragment);
+    drawerRenderedCount += nextBatch.length;
 }
 
 // Open Detailed Modal & Fetch Media Sources
@@ -1078,12 +1189,47 @@ function exportCSV() {
     document.body.removeChild(link);
 }
 
-// ----------------- SHEETJS EXCEL (.XLSX) EXPORT (IIPMaps Stack) -----------------
+// ----------------- DYNAMIC SCRIPT LAZY LOADER (Saves ~55MB RAM on initial load) -----------------
+const _loadedExternalScripts = new Map();
+function loadExternalScript(src) {
+    if (_loadedExternalScripts.has(src)) {
+        return _loadedExternalScripts.get(src);
+    }
+    const p = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = true;
+        s.onload = () => resolve();
+        s.onerror = (e) => reject(new Error(`Failed to load external script: ${src}`));
+        document.head.appendChild(s);
+    });
+    _loadedExternalScripts.set(src, p);
+    return p;
+}
 
-function exportXLSX() {
+// ----------------- SHEETJS EXCEL (.XLSX) EXPORT (IIPMaps Stack - Lazy Loaded) -----------------
+
+async function exportXLSX() {
     if (typeof XLSX === 'undefined') {
-        alert('Excel export library is loading, please try again in a moment.');
-        return;
+        const xlsxBtn = document.getElementById('export-xlsx-btn');
+        const mobileXlsxBtn = document.getElementById('mobile-export-xlsx-btn');
+        const origText = xlsxBtn ? xlsxBtn.innerHTML : '';
+        const origMobileText = mobileXlsxBtn ? mobileXlsxBtn.innerHTML : '';
+        if (xlsxBtn) xlsxBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading Excel Engine...';
+        if (mobileXlsxBtn) mobileXlsxBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading Excel...';
+
+        try {
+            await loadExternalScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+        } catch (err) {
+            console.error('Failed to load SheetJS:', err);
+            alert('Could not load Excel export engine. Please check your internet connection.');
+            if (xlsxBtn) xlsxBtn.innerHTML = origText;
+            if (mobileXlsxBtn) mobileXlsxBtn.innerHTML = origMobileText;
+            return;
+        }
+
+        if (xlsxBtn) xlsxBtn.innerHTML = origText;
+        if (mobileXlsxBtn) mobileXlsxBtn.innerHTML = origMobileText;
     }
 
     const listToExport = (filteredIncidents && filteredIncidents.length > 0) ? filteredIncidents : allIncidents;
@@ -1140,12 +1286,29 @@ function exportXLSX() {
     XLSX.writeFile(wb, `GBV_Explorer_India_Report_${dateStr}.xlsx`);
 }
 
-// ----------------- HIGH-RES MAP IMAGE EXPORT (IIPMaps Stack) -----------------
+// ----------------- HIGH-RES MAP IMAGE EXPORT (IIPMaps Stack - Lazy Loaded) -----------------
 
 async function exportMapImage() {
     if (typeof html2canvas === 'undefined') {
-        alert('Map image exporter is still loading. Please try again in a few seconds.');
-        return;
+        const imgBtn = document.getElementById('export-image-btn');
+        const mobileImgBtn = document.getElementById('mobile-export-img-btn');
+        const origText = imgBtn ? imgBtn.innerHTML : '';
+        const origMobileText = mobileImgBtn ? mobileImgBtn.innerHTML : '';
+        if (imgBtn) imgBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading Image Engine...';
+        if (mobileImgBtn) mobileImgBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading...';
+
+        try {
+            await loadExternalScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');
+        } catch (err) {
+            console.error('Failed to load html2canvas:', err);
+            alert('Could not load map image export engine. Please check your internet connection.');
+            if (imgBtn) imgBtn.innerHTML = origText;
+            if (mobileImgBtn) mobileImgBtn.innerHTML = origMobileText;
+            return;
+        }
+
+        if (imgBtn) imgBtn.innerHTML = origText;
+        if (mobileImgBtn) mobileImgBtn.innerHTML = origMobileText;
     }
 
     const mapEl = document.getElementById('map-container');
@@ -1618,13 +1781,15 @@ function setupEvents() {
         applyFilters();
     });
 
-    document.getElementById('toggle-list-btn').addEventListener('click', () => {
-        document.getElementById('side-drawer').classList.toggle('hidden');
-    });
+    const toggleBtn = document.getElementById('toggle-list-btn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleDrawer);
+    }
 
-    document.getElementById('close-drawer-btn').addEventListener('click', () => {
-        document.getElementById('side-drawer').classList.add('hidden');
-    });
+    const closeBtn = document.getElementById('close-drawer-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeDrawer);
+    }
 
     document.getElementById('close-modal-btn').addEventListener('click', () => {
         document.getElementById('incident-modal').classList.remove('active');
@@ -1940,30 +2105,7 @@ function setupEvents() {
     const applyFiltersBtn = document.getElementById('apply-filters-btn');
     const filterBar = document.getElementById('filter-bar');
 
-    // Drawer Open/Close Logic (NO backdrop/blur on PC!)
-    function openDrawer() {
-        sideDrawer.classList.remove('hidden');
-        sideDrawer.classList.add('active');
-        // Never show backdrop blur on PC; on mobile, drawer is 100% full screen
-        if (drawerBackdrop) drawerBackdrop.classList.remove('active');
-    }
-
-    function closeDrawer() {
-        sideDrawer.classList.add('hidden');
-        sideDrawer.classList.remove('active');
-    }
-
-    if (toggleListBtn) {
-        toggleListBtn.addEventListener('click', () => {
-            if (sideDrawer.classList.contains('hidden') || !sideDrawer.classList.contains('active')) {
-                openDrawer();
-            } else {
-                closeDrawer();
-            }
-        });
-    }
     if (floatingIncidentsBtn) floatingIncidentsBtn.addEventListener('click', openDrawer);
-    if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', closeDrawer);
     if (closeDrawerMobileBtn) closeDrawerMobileBtn.addEventListener('click', closeDrawer);
 
     // Mobile Filters Sheet Logic
